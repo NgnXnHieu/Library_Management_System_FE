@@ -1,0 +1,12 @@
+<div class="admin-layout-wrapper">
+  <!-- 1. NAVBAR PHÍA BÊN TRÁI RIÊNG CHO QUẢN LÝ CHI NHÁNH -->
+  <app-manager-sidebar></app-manager-sidebar>
+
+  <!-- 2. KHU VỰC THAO TÁC CỦA QUẢN LÝ CHI NHÁNH -->
+  <div class="admin-main-wrapper">
+    <app-admin-header></app-admin-header>
+    <main class="admin-content-area">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

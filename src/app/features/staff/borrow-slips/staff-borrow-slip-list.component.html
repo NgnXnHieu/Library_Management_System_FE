@@ -1,0 +1,549 @@
+<div class="borrow-management-container">
+  
+  <!-- ========================================================================= -->
+  <!-- 1. TIÊU ĐỀ TRANG VÀ NÚT TÁC VỤ NHANH                                      -->
+  <!-- ========================================================================= -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon-box">📋</div>
+      <div>
+        <h1 class="page-title">Quản Lý & Xử Lý Phiếu Mượn Chi Nhánh</h1>
+        <p class="page-subtitle">Theo dõi, tra cứu độc giả và cập nhật trạng thái mượn trả sách tại quầy giao dịch</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/staff/inventory" class="btn btn-primary">
+        <span class="btn-icon">📚</span> Tới Kho Sách Lập Phiếu
+      </a>
+      <button class="btn btn-secondary" (click)="loadBorrowSlips()" [disabled]="isLoading">
+        <span class="btn-icon" [class.spin]="isLoading">🔄</span>
+        Làm Mới
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. KHU VỰC BỘ LỌC ĐA TIÊU CHÍ (MULTI-CRITERIA FILTER)                     -->
+  <!-- ========================================================================= -->
+  <section class="card filter-card">
+    <div class="filter-header">
+      <div class="filter-title">
+        <span class="icon">🔍</span> Bộ Lọc & Tìm Kiếm Phiếu Mượn
+      </div>
+      <button class="btn-text-reset" (click)="onResetFilter()">
+        ✕ Xóa bộ lọc
+      </button>
+    </div>
+
+    <div class="filter-grid">
+      <!-- Lọc theo mã phiếu -->
+      <div class="filter-group">
+        <label class="form-label">Mã phiếu mượn</label>
+        <div class="input-with-icon">
+          <span class="input-icon">🔖</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="VD: BS-17278..." 
+            [(ngModel)]="filterParams.borrowCode"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Lọc theo khách hàng -->
+      <div class="filter-group">
+        <label class="form-label">Độc giả (Tên / SĐT / Email)</label>
+        <div class="input-with-icon">
+          <span class="input-icon">👤</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Tìm theo tên, SĐT, email..." 
+            [(ngModel)]="filterParams.customerSearch"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Lọc theo trạng thái mượn -->
+      <div class="filter-group">
+        <label class="form-label">Trạng thái mượn trả</label>
+        <select class="form-control" [(ngModel)]="filterParams.status" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả trạng thái --</option>
+          <option value="BORROWED">🔵 Đang mượn</option>
+          <option value="RETURNED">🟢 Đã trả</option>
+          <option value="OVERDUE">🔴 Quá hạn</option>
+          <option value="CANCELLED">⚪ Đã hủy</option>
+        </select>
+      </div>
+
+      <!-- Lọc theo trạng thái thanh toán -->
+      <div class="filter-group">
+        <label class="form-label">Trạng thái thanh toán</label>
+        <select class="form-control" [(ngModel)]="filterParams.paymentStatus" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả thanh toán --</option>
+          <option value="PAID">🟢 Đã thanh toán</option>
+          <option value="UNPAID">🟠 Chưa thanh toán</option>
+          <option value="REFUNDED">🟣 Đã hoàn tiền</option>
+          <option value="CANCELLED">⚪ Đã hủy</option>
+        </select>
+      </div>
+
+      <!-- Mượn từ ngày -->
+      <div class="filter-group">
+        <label class="form-label">Mượn từ ngày</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="filterParams.fromBorrowedDate"
+          (change)="onSearch()" />
+      </div>
+
+      <!-- Mượn đến ngày -->
+      <div class="filter-group">
+        <label class="form-label">Mượn đến ngày</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="filterParams.toBorrowedDate"
+          (change)="onSearch()" />
+      </div>
+
+      <!-- Sắp xếp -->
+      <div class="filter-group">
+        <label class="form-label">Sắp xếp theo</label>
+        <div class="sort-controls">
+          <select class="form-control" [(ngModel)]="filterParams.sortBy" (change)="onSearch()">
+            <option value="borrowedAt">Thời gian mượn</option>
+            <option value="returnedAt">Thời gian trả</option>
+            <option value="totalAmount">Tổng tiền thuê</option>
+          </select>
+          <button 
+            type="button" 
+            class="btn-sort-dir" 
+            [title]="filterParams.sortDir === 'desc' ? 'Giảm dần (Mới nhất trước)' : 'Tăng dần (Cũ nhất trước)'"
+            (click)="filterParams.sortDir = (filterParams.sortDir === 'desc' ? 'asc' : 'desc'); onSearch()">
+            {{ filterParams.sortDir === 'desc' ? '⬇ Mới nhất' : '⬆ Cũ nhất' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-footer">
+      <div class="filter-summary">
+        Tìm thấy <strong>{{ totalElements }}</strong> phiếu mượn tại chi nhánh
+      </div>
+      <div class="filter-buttons">
+        <button class="btn btn-primary" (click)="onSearch()">
+          <span class="btn-icon">🔍</span> Áp Dụng Bộ Lọc
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BẢNG DANH SÁCH PHIẾU MƯỢN CHI NHÁNH                                    -->
+  <!-- ========================================================================= -->
+  <section class="card table-card">
+    @if (isLoading) {
+      <div class="state-container">
+        <div class="loading-spinner"></div>
+        <p class="state-text">Đang tải danh sách phiếu mượn từ máy chủ...</p>
+      </div>
+    } @else if (borrowSlips.length === 0) {
+      <div class="state-container empty-state">
+        <div class="state-icon">📭</div>
+        <h3 class="state-title">Không tìm thấy phiếu mượn nào</h3>
+        <p class="state-text">Thử thay đổi điều kiện tìm kiếm hoặc bấm Đặt lại để xem toàn bộ danh sách.</p>
+        <button class="btn btn-secondary mt-3" (click)="onResetFilter()">Đặt Lại Bộ Lọc</button>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-code">Mã Phiếu</th>
+              <th class="col-customer">Độc Giả</th>
+              <th class="col-staff">Người Lập</th>
+              <th class="col-date">Ngày Mượn</th>
+              <th class="col-date">Hạn Trả</th>
+              <th class="col-date">Ngày Trả</th>
+              <th class="col-qty text-center">Số Lượng</th>
+              <th class="col-amount text-right">Tổng Tiền</th>
+              <th class="col-status text-center">Trạng Thái</th>
+              <th class="col-payment text-center">Thanh Toán</th>
+              <th class="col-actions text-center">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (slip of borrowSlips; track slip.id) {
+              <tr class="table-row">
+                <!-- Mã phiếu -->
+                <td class="col-code">
+                  <span class="slip-code" (click)="openDetailModal(slip)" title="Bấm để xem chi tiết">
+                    {{ slip.borrowCode }}
+                  </span>
+                </td>
+
+                <!-- Độc giả -->
+                <td class="col-customer">
+                  <div class="customer-info">
+                    <span class="customer-name">{{ slip.customerName || 'Độc giả vãng lai' }}</span>
+                    @if (slip.customerPhone) {
+                      <span class="customer-phone">📞 {{ slip.customerPhone }}</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Người lập -->
+                <td class="col-staff">
+                  <span class="staff-text">👤 {{ slip.staffName || '---' }}</span>
+                </td>
+
+                <!-- Ngày mượn -->
+                <td class="col-date">
+                  <div class="date-cell">
+                    <span>{{ slip.borrowedAt | date:'dd/MM/yyyy' }}</span>
+                    <small class="time-sub">{{ slip.borrowedAt | date:'HH:mm' }}</small>
+                  </div>
+                </td>
+
+                <!-- Hạn trả -->
+                <td class="col-date">
+                  <span class="due-date" [class.due-warning]="slip.status === 'OVERDUE'">
+                    {{ slip.dueAt | date:'dd/MM/yyyy' }}
+                  </span>
+                </td>
+
+                <!-- Ngày trả -->
+                <td class="col-date">
+                  @if (slip.returnedAt) {
+                    <div class="date-cell text-success">
+                      <span>{{ slip.returnedAt | date:'dd/MM/yyyy' }}</span>
+                      <small class="time-sub">{{ slip.returnedAt | date:'HH:mm' }}</small>
+                    </div>
+                  } @else {
+                    <span class="not-returned">Chưa trả</span>
+                  }
+                </td>
+
+                <!-- Số lượng sách -->
+                <td class="col-qty text-center">
+                  <span class="quantity-badge">{{ slip.totalQuantity }} cuốn</span>
+                </td>
+
+                <!-- Tổng tiền -->
+                <td class="col-amount text-right">
+                  <span class="amount-text">{{ slip.totalAmount | number:'1.0-0' }} đ</span>
+                </td>
+
+                <!-- Trạng thái mượn -->
+                <td class="col-status text-center">
+                  <span class="badge" [ngClass]="getStatusBadgeClass(slip.status)">
+                    {{ getStatusLabel(slip.status) }}
+                  </span>
+                </td>
+
+                <!-- Trạng thái thanh toán -->
+                <td class="col-payment text-center">
+                  <span class="badge" [ngClass]="getPaymentStatusBadgeClass(slip.paymentStatus)">
+                    {{ getPaymentStatusLabel(slip.paymentStatus) }}
+                  </span>
+                </td>
+
+                <!-- Thao tác: Xem chi tiết và Cập nhật trạng thái -->
+                <td class="col-actions text-center">
+                  <div class="actions-group">
+                    <button 
+                      class="btn-action btn-detail" 
+                      (click)="openDetailModal(slip)" 
+                      title="Xem chi tiết phiếu mượn & danh sách sách">
+                      👁️ Chi tiết
+                    </button>
+                    <button 
+                      class="btn-action btn-status" 
+                      (click)="openStatusModal(slip)" 
+                      title="Cập nhật trạng thái phiếu mượn">
+                      🔄 Đổi trạng thái
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [totalElements]="totalElements"
+          [pageSize]="pageSize"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)">
+        </app-pagination>
+      </div>
+    }
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODAL XEM CHI TIẾT PHIẾU MƯỢN & DANH SÁCH BORROW ITEMS                 -->
+  <!-- ========================================================================= -->
+  @if (selectedSlipForDetail) {
+    <div class="modal-backdrop" (click)="closeDetailModal()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-badge-icon">📖</span>
+            <div>
+              <h2 class="modal-title">Chi Tiết Phiếu Mượn: {{ selectedSlipForDetail.borrowCode }}</h2>
+              <p class="modal-subtitle">Thông tin quản lý và danh sách đầu sách được mượn trong phiếu</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" (click)="closeDetailModal()">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          
+          <!-- Thông tin tổng quan phiếu mượn -->
+          <div class="detail-overview-grid">
+            <div class="overview-item">
+              <span class="overview-label">Mã phiếu mượn:</span>
+              <span class="overview-value font-monospace font-bold text-primary">{{ selectedSlipForDetail.borrowCode }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Chi nhánh:</span>
+              <span class="overview-value font-bold">🏛️ {{ selectedSlipForDetail.branchName }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Độc giả mượn:</span>
+              <span class="overview-value">
+                <strong>{{ selectedSlipForDetail.customerName || 'Độc giả vãng lai' }}</strong>
+                @if (selectedSlipForDetail.customerPhone) {
+                  <span class="text-muted"> ({{ selectedSlipForDetail.customerPhone }})</span>
+                }
+              </span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Thủ thư lập phiếu:</span>
+              <span class="overview-value">👤 {{ selectedSlipForDetail.staffName || '---' }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Thời điểm mượn:</span>
+              <span class="overview-value">{{ selectedSlipForDetail.borrowedAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Hạn hẹn trả:</span>
+              <span class="overview-value font-bold text-danger">{{ selectedSlipForDetail.dueAt | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Ngày hoàn trả:</span>
+              <span class="overview-value">
+                @if (selectedSlipForDetail.returnedAt) {
+                  <span class="text-success font-bold">{{ selectedSlipForDetail.returnedAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                } @else {
+                  <span class="text-warning">Chưa hoàn trả</span>
+                }
+              </span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Trạng thái mượn:</span>
+              <span class="overview-value">
+                <span class="badge" [ngClass]="getStatusBadgeClass(selectedSlipForDetail.status)">
+                  {{ getStatusLabel(selectedSlipForDetail.status) }}
+                </span>
+              </span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Trạng thái thanh toán:</span>
+              <span class="overview-value">
+                <span class="badge" [ngClass]="getPaymentStatusBadgeClass(selectedSlipForDetail.paymentStatus)">
+                  {{ getPaymentStatusLabel(selectedSlipForDetail.paymentStatus) }}
+                </span>
+              </span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">Tổng chi phí:</span>
+              <span class="overview-value font-bold text-success font-size-lg">
+                {{ selectedSlipForDetail.totalAmount | number:'1.0-0' }} đ
+              </span>
+            </div>
+          </div>
+
+          <!-- Bảng danh sách các cuốn sách trong phiếu (BorrowItems) -->
+          <div class="items-section">
+            <h3 class="section-title">
+              📚 Danh Sách Sách Mượn ({{ selectedSlipForDetail.items?.length || 0 }} đầu sách - {{ selectedSlipForDetail.totalQuantity }} cuốn)
+            </h3>
+
+            @if (!selectedSlipForDetail.items || selectedSlipForDetail.items.length === 0) {
+              <div class="empty-items-box">
+                <p>Không có thông tin chi tiết đầu sách trong phiếu mượn này.</p>
+              </div>
+            } @else {
+              <div class="table-responsive modal-table-box">
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width: 50px;">STT</th>
+                      <th>Tên Sách</th>
+                      <th>Mã ISBN</th>
+                      <th class="text-right">Đơn Giá Mượn</th>
+                      <th class="text-center">Số Lượng</th>
+                      <th class="text-right">Thành Tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of selectedSlipForDetail.items; track item.id; let idx = $index) {
+                      <tr>
+                        <td class="text-center font-bold">{{ idx + 1 }}</td>
+                        <td>
+                          <div class="book-name-cell">
+                            <span class="book-title-text">{{ item.bookTitle }}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="isbn-tag">{{ item.isbn || '---' }}</span>
+                        </td>
+                        <td class="text-right">{{ item.rentalPrice | number:'1.0-0' }} đ</td>
+                        <td class="text-center font-bold text-primary">{{ item.quantity }}</td>
+                        <td class="text-right font-bold text-success">
+                          {{ (item.rentalPrice * item.quantity) | number:'1.0-0' }} đ
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-summary-row">
+                      <td colspan="4" class="text-right font-bold">Tổng cộng:</td>
+                      <td class="text-center font-bold text-primary">{{ selectedSlipForDetail.totalQuantity }} cuốn</td>
+                      <td class="text-right font-bold text-success font-size-md">
+                        {{ selectedSlipForDetail.totalAmount | number:'1.0-0' }} đ
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            }
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+          <button class="btn btn-primary" (click)="openStatusModalFromDetail()">
+            <span class="btn-icon">🔄</span> Cập Nhật Trạng Thái Phiếu
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODAL CẬP NHẬT TRẠNG THÁI PHIẾU MƯỢN                                    -->
+  <!-- ========================================================================= -->
+  @if (selectedSlipForStatusUpdate) {
+    <div class="modal-backdrop" (click)="closeStatusModal()">
+      <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-badge-icon">🔄</span>
+            <div>
+              <h2 class="modal-title">Cập Nhật Trạng Thái Phiếu Mượn</h2>
+              <p class="modal-subtitle">Phiếu: <strong>{{ selectedSlipForStatusUpdate.borrowCode }}</strong> — Độc giả: <strong>{{ selectedSlipForStatusUpdate.customerName }}</strong></p>
+            </div>
+          </div>
+          <button class="btn-close-modal" (click)="closeStatusModal()">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <div class="status-current-box">
+            <span>Trạng thái hiện tại:</span>
+            <span class="badge" [ngClass]="getStatusBadgeClass(selectedSlipForStatusUpdate.status)">
+              {{ getStatusLabel(selectedSlipForStatusUpdate.status) }}
+            </span>
+          </div>
+
+          <div class="form-group mt-3">
+            <label class="form-label font-bold">Chọn trạng thái mới cần chuyển đổi:</label>
+            <div class="status-options-list">
+              
+              <!-- RETURNED: Đã trả sách -->
+              <label class="status-radio-option" [class.selected]="newStatus === 'RETURNED'">
+                <input type="radio" name="statusOption" value="RETURNED" [(ngModel)]="newStatus" />
+                <div class="option-details">
+                  <div class="option-title">
+                    <span class="badge badge-returned">🟢 ĐÃ TRẢ SÁCH (RETURNED)</span>
+                  </div>
+                  <p class="option-desc">Khách hàng đã đem hoàn trả đầy đủ sách cho quầy. Hệ thống sẽ tự động hoàn trả số lượng sách về tồn kho khả dụng của chi nhánh.</p>
+                </div>
+              </label>
+
+              <!-- OVERDUE: Quá hạn -->
+              <label class="status-radio-option" [class.selected]="newStatus === 'OVERDUE'">
+                <input type="radio" name="statusOption" value="OVERDUE" [(ngModel)]="newStatus" />
+                <div class="option-details">
+                  <div class="option-title">
+                    <span class="badge badge-overdue">🔴 QUÁ HẠN (OVERDUE)</span>
+                  </div>
+                  <p class="option-desc">Phiếu mượn đã quá thời hạn hẹn trả sách mà độc giả chưa hoàn trả.</p>
+                </div>
+              </label>
+
+              <!-- CANCELLED: Đã hủy phiếu -->
+              <label class="status-radio-option" [class.selected]="newStatus === 'CANCELLED'">
+                <input type="radio" name="statusOption" value="CANCELLED" [(ngModel)]="newStatus" />
+                <div class="option-details">
+                  <div class="option-title">
+                    <span class="badge badge-cancelled">⚪ HỦY PHIẾU MƯỢN (CANCELLED)</span>
+                  </div>
+                  <p class="option-desc">Hủy bỏ phiếu mượn. Toàn bộ sách mượn sẽ được tự động cộng trả lại vào kho khả dụng của chi nhánh.</p>
+                </div>
+              </label>
+
+              <!-- BORROWED: Đang mượn -->
+              <label class="status-radio-option" [class.selected]="newStatus === 'BORROWED'">
+                <input type="radio" name="statusOption" value="BORROWED" [(ngModel)]="newStatus" />
+                <div class="option-details">
+                  <div class="option-title">
+                    <span class="badge badge-borrowed">🔵 ĐANG MƯỢN (BORROWED)</span>
+                  </div>
+                  <p class="option-desc">Phiếu mượn đang trong thời gian mượn sách hợp lệ.</p>
+                </div>
+              </label>
+
+            </div>
+          </div>
+
+          <div class="alert alert-info mt-3">
+            <span class="alert-icon">ℹ️</span>
+            <span>Lưu ý: Khi chuyển trạng thái sang <strong>Đã trả</strong> hoặc <strong>Đã hủy</strong>, hệ thống sẽ tự động hoàn lại số lượng tồn kho sách tương ứng vào chi nhánh hiện tại.</span>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeStatusModal()" [disabled]="isSubmittingStatus">Hủy Bỏ</button>
+          <button class="btn btn-primary" (click)="confirmUpdateStatus()" [disabled]="isSubmittingStatus">
+            @if (isSubmittingStatus) {
+              <span class="btn-spinner"></span> Đang Lưu...
+            } @else {
+              <span class="btn-icon">💾</span> Lưu Thay Đổi
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

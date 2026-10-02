@@ -1,0 +1,81 @@
+<div class="dashboard-page">
+  <!-- 1. TIÊU ĐỀ BÀN LÀM VIỆC & LỜI CHÀO -->
+  <div class="page-header">
+    <div>
+      <div class="role-tag">🏛️ QUẢN TRỊ VIÊN TOÀN QUỐC</div>
+      <h1 class="page-title">Bảng Điều Khiển Chuỗi Thư Viện</h1>
+      <p class="page-subtitle">
+        Xin chào <strong>{{ authService.currentUser()?.fullName }}</strong>! 
+        Báo cáo hợp nhất số liệu vận hành của 5 chi nhánh trên toàn quốc.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/admin/branches" class="btn btn-primary">
+        <span>➕</span> Thêm Chi Nhánh Mới
+      </a>
+      <a routerLink="/admin/reports" class="btn btn-secondary">
+        <span>📊</span> Báo Cáo Toàn Quốc
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. CÁC THẺ CHỈ SỐ TOÀN CẦU -->
+  <div class="stats-grid">
+    @for (stat of stats; track stat.title) {
+      <div class="stat-card {{ stat.colorClass }}">
+        <div class="stat-icon-wrapper">
+          <span class="stat-icon">{{ stat.icon }}</span>
+        </div>
+        <div class="stat-body">
+          <span class="stat-title">{{ stat.title }}</span>
+          <h2 class="stat-value">{{ stat.value }}</h2>
+          <span class="stat-change">{{ stat.change }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- 3. BẢNG THEO DÕI HOẠT ĐỘNG 5 CHI NHÁNH TOÀN QUỐC -->
+  <div class="card">
+    <div class="card-header-flex">
+      <h3>🏛️ Tình Hình Hoạt Động & Lưu Thông Sách Của 5 Chi Nhánh</h3>
+      <span class="badge badge-success">5/5 Chi Nhánh Trực Tuyến</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tên Chi Nhánh</th>
+            <th>Giám Đốc Chi Nhánh</th>
+            <th>Tổng Đầu Sách Tại Kho</th>
+            <th>Lượng Sách Đang Mượn</th>
+            <th>Trạng Thái Vận Hành</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of branchPerformance; track b.name) {
+            <tr>
+              <td><strong>{{ b.name }}</strong></td>
+              <td>{{ b.manager }}</td>
+              <td>{{ b.totalBooks | number }} cuốn</td>
+              <td>
+                <span class="badge badge-info">{{ b.activeLoans }} lượt</span>
+              </td>
+              <td>
+                <span class="badge" [class.badge-success]="b.status === 'BÌNH THƯỜNG'" [class.badge-warning]="b.status !== 'BÌNH THƯỜNG'">
+                  {{ b.status }}
+                </span>
+              </td>
+              <td>
+                <a routerLink="/admin/inventory" class="btn btn-sm btn-secondary">Xem kho chi nhánh</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

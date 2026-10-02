@@ -1,0 +1,37 @@
+<!-- KHUNG CHỨA CÁC THÔNG BÁO NỔI TOÀN CỤC TRÊN MÀN HÌNH CHÍNH -->
+<div class="toast-wrapper" aria-live="polite" aria-atomic="true">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div 
+      class="toast-item" 
+      [ngClass]="'toast-' + toast.type"
+      role="alert"
+    >
+      <!-- Icon minh họa loại thông báo -->
+      <div class="toast-icon">
+        {{ getIcon(toast.type) }}
+      </div>
+
+      <!-- Nội dung thông báo -->
+      <div class="toast-body">
+        <div class="toast-title">{{ getTitle(toast.type) }}</div>
+        <div class="toast-message">{{ toast.message }}</div>
+      </div>
+
+      <!-- Nút đóng thông báo -->
+      <button 
+        type="button" 
+        class="toast-close" 
+        (click)="dismiss(toast.id)" 
+        aria-label="Đóng"
+      >
+        &times;
+      </button>
+
+      <!-- Thanh tiến trình thời gian đếm ngược -->
+      <div 
+        class="toast-progress" 
+        [style.animationDuration.ms]="toast.duration"
+      ></div>
+    </div>
+  }
+</div>

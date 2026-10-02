@@ -1,0 +1,39 @@
+<div class="customer-layout-wrapper">
+  <!-- 1. HEADER CỐ ĐỊNH PHÍA TRÊN CHO KHÁCH HÀNG -->
+  <app-customer-header></app-customer-header>
+
+  <!-- 2. NỘI DUNG CHÍNH CỦA MÀN HÌNH KHÁCH HÀNG -->
+  <main class="customer-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- 3. FOOTER THƯ VIỆN HIỆN ĐẠI -->
+  <footer class="customer-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="footer-logo">📚 Thư Viện Tri Thức</span>
+        <p class="footer-desc">
+          Hệ sinh thái thư viện thông minh - Kết nối tri thức, lan tỏa đam mê đọc sách tới mọi độc giả.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <div class="link-group">
+          <h4>Dịch vụ</h4>
+          <a routerLink="/categories">Mượn sách online</a>
+          <a routerLink="/borrow-slips">Tra cứu phiếu mượn</a>
+          <a routerLink="/categories">Đề xuất mua sách</a>
+        </div>
+        <div class="link-group">
+          <h4>Hỗ trợ</h4>
+          <a href="javascript:void(0)">Nội quy thư viện</a>
+          <a href="javascript:void(0)">Hướng dẫn mượn/trả</a>
+          <a href="javascript:void(0)">Liên hệ hỗ trợ</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Library Management System. Xây dựng với Angular 18 & Spring Boot.</p>
+    </div>
+  </footer>
+</div>

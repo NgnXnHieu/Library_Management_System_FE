@@ -1,0 +1,33 @@
+<header class="admin-header">
+  <div class="header-left">
+    <div class="breadcrumb">
+      <span class="root-title">Cửa Hàng Thư Viện</span>
+      <span class="separator">/</span>
+      <span class="current-section">Khu Vực Quản Trị</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <!-- Hiển thị ngày giờ làm việc -->
+    <div class="work-date">
+      <span class="calendar-icon">📅</span>
+      <span>{{ currentDate | date:'fullDate' }}</span>
+    </div>
+
+    <!-- Trạng thái hệ thống kết nối Backend -->
+    <div class="system-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Máy chủ kết nối: 8080</span>
+    </div>
+
+    <!-- Thông tin nhân viên trực ca -->
+    <div class="staff-tag">
+      <span class="staff-role-badge">
+        {{ authService.currentUser()?.roles?.[0] }}
+      </span>
+      <span class="staff-name">
+        {{ authService.currentUser()?.fullName }}
+      </span>
+    </div>
+  </div>
+</header>

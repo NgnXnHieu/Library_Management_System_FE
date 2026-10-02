@@ -1,0 +1,77 @@
+<div class="manager-inventory-page">
+  <div class="page-header">
+    <div>
+      <div class="role-tag">📦 QUẢN LÝ KHO SÁCH CHI NHÁNH</div>
+      <h1 class="page-title">Quản Lý Nhập Kho & Kiểm Kê Sách</h1>
+      <p class="page-subtitle">
+        Chi nhánh: <strong>{{ user?.branchName || 'Chi Nhánh 1' }}</strong> | 
+        Theo dõi số lượng tồn, phân bổ và thanh lý sách trong phạm vi chi nhánh.
+      </p>
+    </div>
+
+    <!-- Nút Thao Tác Đặc Quyền Của Quản Lý Chi Nhánh -->
+    <div class="action-buttons">
+      <button class="btn btn-primary">
+        <span>➕</span> Nhập Sách Về Kho Chi Nhánh
+      </button>
+      <button class="btn btn-secondary">
+        <span>📋</span> Tạo Đợt Kiểm Kê
+      </button>
+      <button class="btn btn-danger">
+        <span>⚠️</span> Thanh Lý Sách Hỏng
+      </button>
+    </div>
+  </div>
+
+  <!-- Thanh tìm kiếm -->
+  <div class="card search-card">
+    <div class="search-input-group">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Tìm kiếm theo tên sách hoặc mã sách chi nhánh..." 
+        [(ngModel)]="keyword"
+      />
+    </div>
+  </div>
+
+  <!-- Bảng kho chi nhánh -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Mã Sách</th>
+            <th>Tên Đầu Sách</th>
+            <th>Tác Giả</th>
+            <th>Tổng Nhập</th>
+            <th>Đang Cho Mượn</th>
+            <th>Còn Tại Kho</th>
+            <th>Tình Trạng Sách</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of filteredList; track item.code) {
+            <tr>
+              <td><span class="code-badge">{{ item.code }}</span></td>
+              <td><strong>{{ item.title }}</strong></td>
+              <td class="text-muted">{{ item.author }}</td>
+              <td>{{ item.total }} cuốn</td>
+              <td><span class="badge badge-warning">{{ item.borrowed }} cuốn</span></td>
+              <td><span class="badge badge-success">{{ item.stock }} cuốn</span></td>
+              <td>{{ item.condition }}</td>
+              <td>
+                <div class="action-cell">
+                  <button class="btn-action edit" title="Cập nhật thông tin kho">✏️</button>
+                  <button class="btn-action liquidate" title="Thanh lý bản rách/mất">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

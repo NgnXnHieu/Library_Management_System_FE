@@ -1,0 +1,36 @@
+<header class="navbar">
+  <div class="container navbar-content">
+    <!-- Logo thương hiệu -->
+    <a routerLink="/" class="navbar-brand">
+      <span class="logo-icon">📚</span>
+      <span class="logo-text">Thư Viện Số</span>
+    </a>
+
+    <!-- Menu điều hướng chính -->
+    <nav class="navbar-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+
+      <!-- Menu chỉ hiển thị khi ĐÃ đăng nhập -->
+      @if (authService.isAuthenticated()) {
+        <a routerLink="/borrow-slips" routerLinkActive="active">Phiếu mượn</a>
+        
+        <!-- Menu chỉ hiển thị cho ADMIN -->
+        @if (authService.hasAnyRole(['ROLE_ADMIN'])) {
+          <span class="badge-role">ADMIN</span>
+        }
+      }
+    </nav>
+
+    <!-- Khu vực tài khoản / Đăng nhập -->
+    <div class="navbar-auth">
+      @if (authService.isAuthenticated()) {
+        <div class="user-greeting">
+          Xin chào, <strong>{{ authService.currentUser()?.fullName || authService.currentUser()?.username }}</strong>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="onLogout()">Đăng xuất</button>
+      } @else {
+        <a routerLink="/login" class="btn btn-primary btn-sm">Đăng nhập</a>
+      }
+    </div>
+  </div>
+</header>

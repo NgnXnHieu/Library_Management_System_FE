@@ -1,0 +1,15 @@
+<div class="admin-layout-wrapper">
+  <!-- 1. NAVBAR PHÍA BÊN TRÁI (SIDEBAR) -->
+  <app-admin-sidebar></app-admin-sidebar>
+
+  <!-- 2. KHU VỰC THAO TÁC BÊN PHẢI -->
+  <div class="admin-main-wrapper">
+    <!-- Topbar nội bộ -->
+    <app-admin-header></app-admin-header>
+
+    <!-- Nơi render các màn hình quản trị -->
+    <main class="admin-content-area">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

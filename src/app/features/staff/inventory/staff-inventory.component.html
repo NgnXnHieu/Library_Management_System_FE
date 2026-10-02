@@ -1,0 +1,568 @@
+<div class="staff-inventory-container">
+  
+  <!-- ========================================================================= -->
+  <!-- 1. TIÊU ĐỀ TRANG VÀ THAO TÁC NHANH                                        -->
+  <!-- ========================================================================= -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon-box">📚</div>
+      <div>
+        <h1 class="page-title">Kho Sách Chi Nhánh & Lập Phiếu Mượn</h1>
+        <p class="page-subtitle">Tra cứu kho sách thực tế tại chi nhánh và thực hiện lập phiếu mượn sách trực tiếp cho độc giả</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="loadInventories()" [disabled]="isLoadingInventories">
+        <span class="btn-icon" [class.spin]="isLoadingInventories">🔄</span>
+        Làm Mới Kho
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. BỘ LỌC TÌM KIẾM KHO SÁCH                                               -->
+  <!-- ========================================================================= -->
+  <section class="card filter-card">
+    <div class="filter-header">
+      <div class="filter-title">
+        <span class="icon">🔍</span> Tra Cứu Tồn Kho Sách Chi Nhánh
+      </div>
+      <button class="btn-text-reset" (click)="onResetFilters()">
+        ✕ Xóa bộ lọc
+      </button>
+    </div>
+
+    <div class="filter-grid">
+      <!-- Tên sách hoặc ISBN -->
+      <div class="filter-group">
+        <label class="form-label">Tên sách / Mã ISBN</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📖</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nhập tên sách, mã ISBN..." 
+            [(ngModel)]="filterParams.bookTitle"
+            (keyup.enter)="onSearchInventories()" />
+        </div>
+      </div>
+
+      <!-- Thể loại sách -->
+      <div class="filter-group">
+        <label class="form-label">Thể loại sách</label>
+        <select class="form-control" [(ngModel)]="filterParams.categoryId" (change)="onSearchInventories()">
+          <option [ngValue]="undefined">-- Tất cả thể loại --</option>
+          @for (cat of categories; track cat.id) {
+            <option [ngValue]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Vị trí kệ sách -->
+      <div class="filter-group">
+        <label class="form-label">Vị trí kệ sách</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📍</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="VD: Kệ A1, Tầng 2..." 
+            [(ngModel)]="filterParams.shelfLocation"
+            (keyup.enter)="onSearchInventories()" />
+        </div>
+      </div>
+
+      <!-- Sắp xếp -->
+      <div class="filter-group">
+        <label class="form-label">Sắp xếp theo</label>
+        <div class="sort-controls">
+          <select class="form-control" [(ngModel)]="filterParams.sortBy" (change)="onSearchInventories()">
+            <option value="updatedAt">Mới cập nhật</option>
+            <option value="bookTitle">Tên sách (A-Z)</option>
+            <option value="availableQuantity">Số lượng khả dụng</option>
+            <option value="rentalPrice">Đơn giá mượn</option>
+          </select>
+          <button 
+            type="button" 
+            class="btn-sort-dir" 
+            [title]="filterParams.sortDir === 'desc' ? 'Giảm dần' : 'Tăng dần'"
+            (click)="filterParams.sortDir = (filterParams.sortDir === 'desc' ? 'asc' : 'desc'); onSearchInventories()">
+            {{ filterParams.sortDir === 'desc' ? '⬇ Giảm' : '⬆ Tăng' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-footer">
+      <div class="filter-summary">
+        Tìm thấy <strong>{{ totalElements }}</strong> đầu sách trong kho chi nhánh
+      </div>
+      <button class="btn btn-primary" (click)="onSearchInventories()">
+        <span class="btn-icon">🔍</span> Tìm Kiếm Sách
+      </button>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BẢNG DANH SÁCH TỒN KHO CHI NHÁNH                                       -->
+  <!-- ========================================================================= -->
+  <section class="card table-card">
+    @if (isLoadingInventories) {
+      <div class="state-container">
+        <div class="loading-spinner"></div>
+        <p class="state-text">Đang tải danh sách sách trong kho chi nhánh...</p>
+      </div>
+    } @else if (inventories.length === 0) {
+      <div class="state-container empty-state">
+        <div class="state-icon">📭</div>
+        <h3 class="state-title">Không tìm thấy sách nào phù hợp</h3>
+        <p class="state-text">Thử đổi từ khóa tìm kiếm hoặc bấm Xóa bộ lọc để xem toàn bộ sách.</p>
+        <button class="btn btn-secondary mt-3" (click)="onResetFilters()">Xem Toàn Bộ Sách</button>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-cover text-center">Bìa</th>
+              <th class="col-book">Thông Tin Sách</th>
+              <th class="col-category">Thể Loại</th>
+              <th class="col-shelf">Vị Trí Kệ</th>
+              <th class="col-price text-right">Giá Mượn</th>
+              <th class="col-stock text-center">Khả Dụng / Tổng</th>
+              <th class="col-action text-center">Chọn Mượn</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (inv of inventories; track inv.id) {
+              <tr class="table-row" [class.row-out-of-stock]="(inv.availableQuantity || 0) <= 0">
+                <!-- Bìa sách -->
+                <td class="col-cover text-center">
+                  <div class="book-cover-wrapper">
+                    @if (inv.coverImageUrl) {
+                      <img 
+                        [src]="getImageUrl(inv.coverImageUrl)" 
+                        (error)="onImageError($event)"
+                        [alt]="inv.bookTitle" 
+                        class="book-thumb" />
+                      <div class="book-thumb-placeholder" style="display: none;">📖</div>
+                    } @else {
+                      <div class="book-thumb-placeholder">📖</div>
+                    }
+                  </div>
+                </td>
+
+                <!-- Thông tin sách -->
+                <td class="col-book">
+                  <div class="book-details">
+                    <span class="book-title">{{ inv.bookTitle }}</span>
+                    @if (inv.isbn) {
+                      <span class="book-isbn">ISBN: {{ inv.isbn }}</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Thể loại -->
+                <td class="col-category">
+                  @if (inv.categoryName) {
+                    <span class="category-tag">{{ inv.categoryName }}</span>
+                  } @else {
+                    <span class="text-muted">---</span>
+                  }
+                </td>
+
+                <!-- Vị trí kệ -->
+                <td class="col-shelf">
+                  <span class="shelf-pill">📍 {{ inv.shelfLocation || 'Chưa xếp kệ' }}</span>
+                </td>
+
+                <!-- Đơn giá mượn -->
+                <td class="col-price text-right">
+                  <span class="rental-price">{{ inv.rentalPrice | number:'1.0-0' }} đ</span>
+                </td>
+
+                <!-- Tồn kho: Khả dụng / Tổng số -->
+                <td class="col-stock text-center">
+                  <div class="stock-badge-box">
+                    @if ((inv.availableQuantity || 0) > 0) {
+                      <span class="badge badge-available">
+                        {{ inv.availableQuantity }} / {{ inv.totalQuantity }} cuốn
+                      </span>
+                    } @else {
+                      <span class="badge badge-out-of-stock">Hết sách (0/{{ inv.totalQuantity }})</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Cột Chọn mượn: Chỉ hiển thị nút chọn khi availableQuantity > 0 -->
+                <td class="col-action text-center">
+                  @if ((inv.availableQuantity || 0) > 0) {
+                    <div class="select-qty-control">
+                      <div class="qty-stepper">
+                        <button 
+                          type="button" 
+                          class="btn-step" 
+                          (click)="adjustRowQty(inv.id, -1, inv.availableQuantity)"
+                          [disabled]="(rowQuantities[inv.id] || 1) <= 1">-</button>
+                        <input 
+                          type="number" 
+                          class="input-qty" 
+                          [(ngModel)]="rowQuantities[inv.id]" 
+                          (change)="onRowQtyInput(inv.id, inv.availableQuantity)"
+                          min="1" 
+                          [max]="inv.availableQuantity" />
+                        <button 
+                          type="button" 
+                          class="btn-step" 
+                          (click)="adjustRowQty(inv.id, 1, inv.availableQuantity)"
+                          [disabled]="(rowQuantities[inv.id] || 1) >= inv.availableQuantity">+</button>
+                      </div>
+                      <button 
+                        type="button" 
+                        class="btn-select-book" 
+                        (click)="selectBook(inv)"
+                        title="Thêm số lượng đã chọn vào danh sách mượn bên dưới">
+                        + Chọn
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="disabled-label">🚫 Tạm hết</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [totalElements]="totalElements"
+          [pageSize]="pageSize"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)">
+        </app-pagination>
+      </div>
+    }
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 4. KHU VỰC HIỂN THỊ MƯỢN SÁCH Ở BÊN DƯỚI (BORROW BASKET WORKSPACE)        -->
+  <!-- ========================================================================= -->
+  <section class="card borrow-workspace-card">
+    <div class="workspace-header">
+      <div class="workspace-title-box">
+        <span class="workspace-icon">📋</span>
+        <div>
+          <h2 class="workspace-title">Khu Vực Lập Phiếu Mượn Sách</h2>
+          <p class="workspace-subtitle">
+            Đã chọn <strong>{{ selectedBooks.length }}</strong> đầu sách 
+            (<strong>{{ totalBorrowQuantity }}</strong> cuốn) 
+            — Tổng tiền tạm tính: <strong class="text-success">{{ totalBorrowAmount | number:'1.0-0' }} đ</strong>
+          </p>
+        </div>
+      </div>
+      @if (selectedBooks.length > 0) {
+        <button class="btn-clear-basket" (click)="clearAllBasket()">
+          🗑️ Xóa toàn bộ sách đã chọn
+        </button>
+      }
+    </div>
+
+    <div class="workspace-content-grid">
+      
+      <!-- CỘT TRÁI: DANH SÁCH CÁC SÁCH ĐÃ CHỌN -->
+      <div class="basket-books-column">
+        <h3 class="column-title">📚 Danh Sách Sách Được Chọn Mượn</h3>
+
+        @if (selectedBooks.length === 0) {
+          <div class="empty-basket-box">
+            <div class="empty-basket-icon">🛒</div>
+            <p class="empty-basket-text">Chưa có cuốn sách nào được chọn.</p>
+            <p class="empty-basket-hint">Hãy chọn số lượng và bấm nút <strong>"+ Chọn"</strong> ở bảng kho sách bên trên để thêm vào danh sách mượn.</p>
+          </div>
+        } @else {
+          <div class="basket-table-wrapper">
+            <table class="basket-table">
+              <thead>
+                <tr>
+                  <th>Sách mượn</th>
+                  <th class="text-center">Vị trí kệ</th>
+                  <th class="text-right">Đơn giá</th>
+                  <th class="text-center">Số lượng</th>
+                  <th class="text-right">Thành tiền</th>
+                  <th class="text-center">Bỏ</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of selectedBooks; track item.inventoryId) {
+                  <tr>
+                    <td>
+                      <div class="basket-item-info">
+                        <span class="basket-item-title">{{ item.bookTitle }}</span>
+                        @if (item.isbn) {
+                          <span class="basket-item-isbn">ISBN: {{ item.isbn }}</span>
+                        }
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <span class="shelf-pill-sm">📍 {{ item.shelfLocation || '---' }}</span>
+                    </td>
+                    <td class="text-right">
+                      {{ item.rentalPrice | number:'1.0-0' }} đ
+                    </td>
+                    <td class="text-center">
+                      <div class="basket-qty-control">
+                        <button type="button" class="btn-mini-step" (click)="changeBasketItemQty(item, -1)">-</button>
+                        <span class="basket-qty-val">{{ item.quantity }}</span>
+                        <button 
+                          type="button" 
+                          class="btn-mini-step" 
+                          (click)="changeBasketItemQty(item, 1)"
+                          [disabled]="item.quantity >= item.availableQuantity">+</button>
+                      </div>
+                    </td>
+                    <td class="text-right font-bold text-success">
+                      {{ (item.rentalPrice * item.quantity) | number:'1.0-0' }} đ
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn-remove-item" (click)="removeBasketItem(item)" title="Bỏ cuốn này">✕</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="basket-summary-row">
+                  <td colspan="3" class="text-right font-bold">Tổng cộng:</td>
+                  <td class="text-center font-bold text-primary">{{ totalBorrowQuantity }} cuốn</td>
+                  <td class="text-right font-bold text-success font-size-lg">{{ totalBorrowAmount | number:'1.0-0' }} đ</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      </div>
+
+      <!-- CỘT PHẢI: CHỌN ĐỘC GIẢ (CUSTOMER COMBOBOX) & THANH TOÁN -->
+      <div class="checkout-control-column">
+        <h3 class="column-title">👤 Thông Tin Độc Giả & Thanh Toán</h3>
+
+        <!-- PHẦN CHỌN CUSTOMER (COMBOBOX AUTOCOMPLETE) -->
+        <div class="form-group customer-combobox-group">
+          <label class="form-label font-bold">
+            Chọn Độc Giả (Khách hàng) <span class="text-danger">*</span>
+          </label>
+
+          @if (!selectedCustomer) {
+            <!-- Ô tìm kiếm gọi sang API /users/customer khi gõ chữ -->
+            <div class="search-input-box">
+              <span class="search-icon">🔍</span>
+              <input 
+                type="text" 
+                class="form-control form-control-lg" 
+                placeholder="Nhập tên, số điện thoại, email..."
+                [value]="customerSearchText"
+                (input)="onCustomerInput($event)"
+                (focus)="showCustomerDropdown = customerSearchResults.length > 0"
+                (blur)="closeCustomerDropdown()" />
+              @if (isSearchingCustomer) {
+                <span class="search-spinner"></span>
+              }
+            </div>
+
+            <!-- Dropdown danh sách kết quả tìm kiếm -->
+            @if (showCustomerDropdown && customerSearchResults.length > 0) {
+              <div class="customer-dropdown-menu">
+                @for (cust of customerSearchResults; track cust.userId) {
+                  <div class="customer-dropdown-item" (mousedown)="selectCustomer(cust)">
+                    <div class="cust-avatar">👤</div>
+                    <div class="cust-info">
+                      <div class="cust-name-line">
+                        <strong>{{ cust.fullName }}</strong>
+                        <span class="cust-username">&#64;{{ cust.username }}</span>
+                      </div>
+                      <div class="cust-meta-line">
+                        <span>📞 {{ cust.phone || 'Chưa có SĐT' }}</span>
+                        <span>✉️ {{ cust.email }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (showCustomerDropdown && customerSearchText.trim().length > 0 && !isSearchingCustomer) {
+              <div class="customer-dropdown-menu">
+                <div class="dropdown-no-results">
+                  Không tìm thấy độc giả nào phù hợp với từ khóa "{{ customerSearchText }}"
+                </div>
+              </div>
+            }
+          } @else {
+            <!-- Thẻ hiển thị độc giả đã được chọn -->
+            <div class="selected-customer-card">
+              <div class="cust-selected-header">
+                <div class="cust-avatar-selected">👤</div>
+                <div class="cust-selected-details">
+                  <h4 class="cust-selected-name">{{ selectedCustomer.fullName }}</h4>
+                  <div class="cust-selected-meta">
+                    <span>📞 {{ selectedCustomer.phone || '---' }}</span>
+                    <span>✉️ {{ selectedCustomer.email }}</span>
+                    <span>🔖 &#64;{{ selectedCustomer.username }}</span>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-change-customer" (click)="removeCustomer()">
+                ✕ Đổi độc giả khác
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- PHẦN CHỌN PHƯƠNG THỨC THANH TOÁN -->
+        <div class="form-group mt-3">
+          <label class="form-label font-bold">
+            Phương Thức Thanh Toán <span class="text-danger">*</span>
+          </label>
+          <div class="payment-method-selector">
+            <label class="payment-option" [class.selected]="paymentMethod === 'CASH'">
+              <input 
+                type="radio" 
+                name="paymentMethod" 
+                value="CASH" 
+                [(ngModel)]="paymentMethod" />
+              <div class="option-content">
+                <span class="option-icon">💵</span>
+                <div>
+                  <span class="option-title">Tiền Mặt Tại Quầy</span>
+                  <small class="option-desc">Thu tiền mặt trực tiếp</small>
+                </div>
+              </div>
+            </label>
+
+            <label class="payment-option" [class.selected]="paymentMethod === 'BANK_TRANSFER'">
+              <input 
+                type="radio" 
+                name="paymentMethod" 
+                value="BANK_TRANSFER" 
+                [(ngModel)]="paymentMethod" />
+              <div class="option-content">
+                <span class="option-icon">📱</span>
+                <div>
+                  <span class="option-title">Chuyển Khoản Ngân Hàng</span>
+                  <small class="option-desc">Quét mã QR chuyển khoản</small>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- TÓM TẮT VÀ NÚT TẠO PHIẾU MƯỢN -->
+        <div class="checkout-action-box mt-4">
+          <div class="checkout-bill-row">
+            <span>Tổng số sách mượn:</span>
+            <strong>{{ totalBorrowQuantity }} cuốn</strong>
+          </div>
+          <div class="checkout-bill-row total-highlight">
+            <span>Tổng tiền thanh toán:</span>
+            <strong class="text-success font-size-lg">{{ totalBorrowAmount | number:'1.0-0' }} đ</strong>
+          </div>
+
+          <button 
+            type="button" 
+            class="btn btn-primary btn-create-slip" 
+            [disabled]="selectedBooks.length === 0 || !selectedCustomer"
+            (click)="openConfirmModal()">
+            <span class="btn-icon">📝</span> LẬP PHIẾU MƯỢN SÁCH
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODAL XÁC NHẬN LẬP PHIẾU MƯỢN (CONFIRM FORM)                           -->
+  <!-- ========================================================================= -->
+  @if (showConfirmModal && selectedCustomer) {
+    <div class="modal-backdrop" (click)="closeConfirmModal()">
+      <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-badge-icon">📋</span>
+            <div>
+              <h2 class="modal-title">Xác Nhận Tạo Phiếu Mượn</h2>
+              <p class="modal-subtitle">Kiểm tra lại thông tin độc giả và danh sách sách mượn</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" (click)="closeConfirmModal()">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <!-- Thông tin độc giả -->
+          <div class="confirm-customer-box">
+            <span class="confirm-label">Độc giả mượn sách:</span>
+            <h4 class="confirm-customer-name">{{ selectedCustomer.fullName }}</h4>
+            <div class="confirm-customer-meta">
+              <span>📞 SĐT: {{ selectedCustomer.phone || 'Chưa cập nhật' }}</span>
+              <span>✉️ Email: {{ selectedCustomer.email }}</span>
+            </div>
+          </div>
+
+          <!-- Danh sách sách tóm tắt -->
+          <div class="confirm-books-summary mt-3">
+            <span class="confirm-label">Danh sách sách mượn ({{ selectedBooks.length }} đầu sách):</span>
+            <ul class="confirm-books-list">
+              @for (b of selectedBooks; track b.inventoryId) {
+                <li class="confirm-book-item">
+                  <div class="confirm-book-name">
+                    <strong>{{ b.bookTitle }}</strong>
+                    <span class="confirm-book-shelf">({{ b.shelfLocation || 'Chưa có kệ' }})</span>
+                  </div>
+                  <div class="confirm-book-qty">
+                    {{ b.quantity }} cuốn × {{ b.rentalPrice | number:'1.0-0' }} đ = 
+                    <strong class="text-success">{{ (b.quantity * b.rentalPrice) | number:'1.0-0' }} đ</strong>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+
+          <!-- Tóm tắt chi phí & thanh toán -->
+          <div class="confirm-payment-summary mt-3">
+            <div class="confirm-row">
+              <span>Hình thức thanh toán:</span>
+              <strong>{{ paymentMethod === 'CASH' ? '💵 Tiền mặt tại quầy' : '📱 Chuyển khoản ngân hàng' }}</strong>
+            </div>
+            <div class="confirm-row total-row">
+              <span>Tổng chi phí mượn:</span>
+              <strong class="text-success font-size-lg">{{ totalBorrowAmount | number:'1.0-0' }} đ</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeConfirmModal()" [disabled]="isSubmittingBorrowSlip">
+            Hủy Bỏ
+          </button>
+          <button class="btn btn-primary" (click)="confirmCreateBorrowSlip()" [disabled]="isSubmittingBorrowSlip">
+            @if (isSubmittingBorrowSlip) {
+              <span class="spinner-sm"></span> Đang tạo phiếu...
+            } @else {
+              <span class="btn-icon">✅</span> Xác Nhận Tạo Phiếu
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

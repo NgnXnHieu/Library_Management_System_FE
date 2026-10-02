@@ -1,0 +1,74 @@
+<div class="manager-dashboard">
+  <div class="page-header">
+    <div>
+      <div class="role-tag">👔 ĐIỀU HÀNH QUẢN LÝ CHI NHÁNH</div>
+      <h1 class="page-title">Bảng Tổng Quan Hoạt Động Chi Nhánh</h1>
+      <p class="page-subtitle">
+        Chi nhánh: <strong>{{ user?.branchName || 'Chi Nhánh 1' }}</strong> | 
+        Người điều hành: <strong>{{ user?.fullName }}</strong>
+      </p>
+    </div>
+
+    <div class="action-buttons">
+      <a routerLink="/manager/inventory" class="btn btn-primary">
+        <span>📥</span> Nhập Sách Về Chi Nhánh
+      </a>
+      <a routerLink="/manager/reports" class="btn btn-secondary">
+        <span>📊</span> Xuất Báo Cáo
+      </a>
+    </div>
+  </div>
+
+  <!-- Thống kê doanh thu & hiệu suất -->
+  <div class="stats-grid">
+    @for (s of stats; track s.title) {
+      <div class="stat-card {{ s.colorClass }}">
+        <div class="stat-icon-wrapper">{{ s.icon }}</div>
+        <div class="stat-body">
+          <span class="stat-title">{{ s.title }}</span>
+          <h2 class="stat-value">{{ s.value }}</h2>
+          <span class="stat-change">{{ s.change }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Tình hình nhân sự ca trực -->
+  <div class="card table-card">
+    <div class="card-header-flex">
+      <h3>👥 Tình Hình Nhân Sự & Năng Suất Tiếp Nhận Hôm Nay</h3>
+      <span class="badge badge-success">4 Nhân Sự Đang Hoạt Động</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Họ Tên Nhân Viên</th>
+            <th>Vị Trí Phụ Trách</th>
+            <th>Số Lượt Xử Lý Hôm Nay</th>
+            <th>Trạng Thái Ca Trực</th>
+            <th>Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (staff of staffRoster; track staff.name) {
+            <tr>
+              <td><strong>{{ staff.name }}</strong></td>
+              <td>{{ staff.role }}</td>
+              <td><strong>{{ staff.handledSlips }}</strong> lượt giao dịch</td>
+              <td>
+                <span class="badge" [class.badge-success]="staff.status === 'ĐANG TRỰC'" [class.badge-info]="staff.status !== 'ĐANG TRỰC'">
+                  {{ staff.status }}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-secondary">Chi tiết ca trực</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

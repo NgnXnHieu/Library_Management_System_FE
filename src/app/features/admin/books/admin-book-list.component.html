@@ -1,0 +1,722 @@
+<div class="admin-book-page">
+  <!-- 1. TIÊU ĐỀ TRANG VÀ NÚT THAO TÁC CẤP CAO -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="role-tag">📚 QUẢN TRỊ VIÊN HỆ THỐNG</div>
+      <h1 class="page-title">Quản Lý Đầu Sách Toàn Chuỗi</h1>
+      <p class="page-subtitle">
+        Quản lý danh mục đầu sách, giá thuê, bìa sách và kiểm soát hiển thị công khai trên toàn hệ thống thư viện.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary btn-add" (click)="openCreateModal()">
+        <span class="btn-icon">➕</span> Thêm Đầu Sách Mới
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. KHUNG BỘ LỌC TÌM KIẾM ĐA TIÊU CHÍ -->
+  <div class="card filter-card">
+    <div class="filter-header">
+      <span class="filter-icon">🔍</span>
+      <span class="filter-title">Bộ Lọc Tìm Kiếm Đầu Sách</span>
+    </div>
+
+    <div class="filter-grid">
+      <!-- 1. Mã ISBN -->
+      <div class="form-group">
+        <label for="filterIsbn">Mã ISBN:</label>
+        <input 
+          id="filterIsbn" 
+          type="text" 
+          class="form-control" 
+          placeholder="Ví dụ: 978604..." 
+          [(ngModel)]="filterParams.isbn"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 2. Tiêu Đề Sách -->
+      <div class="form-group">
+        <label for="filterTitle">Tiêu đề sách:</label>
+        <input 
+          id="filterTitle" 
+          type="text" 
+          class="form-control" 
+          placeholder="Nhập tên đầu sách..." 
+          [(ngModel)]="filterParams.title"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 3. Tác Giả -->
+      <div class="form-group">
+        <label for="filterAuthor">Tác giả:</label>
+        <input 
+          id="filterAuthor" 
+          type="text" 
+          class="form-control" 
+          placeholder="Tên tác giả..." 
+          [(ngModel)]="filterParams.author"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 4. Thể Loại Sách (Lấy động từ API categories) -->
+      <div class="form-group">
+        <label for="filterCategory">Thể loại:</label>
+        <select 
+          id="filterCategory" 
+          class="form-select" 
+          [(ngModel)]="filterParams.categoryId"
+          (ngModelChange)="onSearch()"
+        >
+          <option [ngValue]="undefined">-- Tất cả thể loại --</option>
+          @for (cat of categoryList; track cat.id) {
+            <option [ngValue]="cat.id">
+              {{ cat.name }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <!-- 5. Nhà Xuất Bản -->
+      <div class="form-group">
+        <label for="filterPublisher">Nhà xuất bản:</label>
+        <input 
+          id="filterPublisher" 
+          type="text" 
+          class="form-control" 
+          placeholder="Tên nhà xuất bản..." 
+          [(ngModel)]="filterParams.publisher"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 6. Năm Xuất Bản -->
+      <div class="form-group">
+        <label for="filterPubYear">Năm XB:</label>
+        <input 
+          id="filterPubYear" 
+          type="number" 
+          class="form-control" 
+          placeholder="Ví dụ: 2024" 
+          [(ngModel)]="filterParams.publicationYear"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 7. Khoảng Giá Bán (Từ - Đến) -->
+      <div class="form-group">
+        <label for="filterMinPrice">Giá bán từ (VNĐ):</label>
+        <input 
+          id="filterMinPrice" 
+          type="number" 
+          class="form-control" 
+          placeholder="Từ..." 
+          [(ngModel)]="filterParams.minPrice"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="filterMaxPrice">Giá bán đến (VNĐ):</label>
+        <input 
+          id="filterMaxPrice" 
+          type="number" 
+          class="form-control" 
+          placeholder="Đến..." 
+          [(ngModel)]="filterParams.maxPrice"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 8. Trạng Thái Hiển Thị -->
+      <div class="form-group">
+        <label for="filterStatus">Trạng thái hiển thị:</label>
+        <select 
+          id="filterStatus" 
+          class="form-select" 
+          [(ngModel)]="filterParams.status"
+        >
+          <option value="">-- Tất cả trạng thái --</option>
+          <option value="UNHIDE">🟢 Đang hiển thị (UNHIDE)</option>
+          <option value="HIDE">⚪ Đang ẩn (HIDE)</option>
+        </select>
+      </div>
+
+      <!-- 9. Sắp Xếp Theo -->
+      <div class="form-group">
+        <label for="filterSortBy">Sắp xếp theo:</label>
+        <select 
+          id="filterSortBy" 
+          class="form-select" 
+          [(ngModel)]="filterParams.sortBy"
+          (ngModelChange)="onSortChange()"
+        >
+          <option value="createdAt">🕒 Ngày tạo mới</option>
+          <option value="title">📖 Tiêu đề sách</option>
+          <option value="isbn">🔢 Mã ISBN</option>
+          <option value="author">✍️ Tác giả</option>
+          <option value="publicationYear">📅 Năm xuất bản</option>
+          <option value="price">💰 Giá bán</option>
+          <option value="rentalPrice">🏷️ Giá thuê</option>
+        </select>
+      </div>
+
+      <!-- 10. Thứ Tự Sắp Xếp -->
+      <div class="form-group">
+        <label for="filterSortDir">Thứ tự sắp xếp:</label>
+        <select 
+          id="filterSortDir" 
+          class="form-select" 
+          [(ngModel)]="filterParams.sortDir"
+          (ngModelChange)="onSortChange()"
+        >
+          <option value="desc">⬇️ Giảm dần (Mới nhất / Lớn đến bé)</option>
+          <option value="asc">⬆️ Tăng dần (Cũ nhất / Bé đến lớn)</option>
+        </select>
+      </div>
+
+      <!-- 11. Số Lượng Bản Ghi / Trang -->
+      <div class="form-group">
+        <label for="filterPageSize">Số lượng / trang:</label>
+        <select 
+          id="filterPageSize" 
+          class="form-select" 
+          [ngModel]="pageSize"
+          (ngModelChange)="onPageSizeChange($event)"
+        >
+          <option [value]="5">5 bản ghi / trang</option>
+          <option [value]="10">10 bản ghi / trang</option>
+          <option [value]="20">20 bản ghi / trang</option>
+          <option [value]="50">50 bản ghi / trang</option>
+          <option [value]="100">100 bản ghi / trang</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Hàng nút bấm Tìm kiếm & Làm mới -->
+    <div class="filter-actions">
+      <button type="button" class="btn btn-outline" (click)="onReset()">
+        <span class="btn-icon">🔄</span> Làm Mới
+      </button>
+      <button type="button" class="btn btn-primary" (click)="onSearch()">
+        <span class="btn-icon">🔍</span> Tìm Kiếm
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. BẢNG DỮ LIỆU DANH SÁCH ĐẦU SÁCH -->
+  <div class="card table-card">
+    <div class="table-header">
+      <div class="table-title">
+        <span>📖 Danh Sách Đầu Sách</span>
+        <span class="badge count-badge">{{ totalElements }} đầu sách</span>
+      </div>
+      <div class="table-note">
+        * Sắp xếp: <strong>{{ filterParams.sortBy }}</strong> ({{ filterParams.sortDir === 'desc' ? 'Giảm dần ⬇️' : 'Tăng dần ⬆️' }}) • Nhấp tiêu đề cột để sắp xếp nhanh
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 50px;">STT</th>
+            <th class="text-center" style="width: 80px;">Bìa Sách</th>
+            <th 
+              class="sortable" 
+              (click)="onSort('isbn')" 
+              style="width: 140px;" 
+              [class.sort-active]="filterParams.sortBy === 'isbn'"
+              title="Nhấn để sắp xếp theo ISBN"
+            >
+              <div class="th-content">
+                <span>Mã ISBN</span>
+                <span class="sort-icon">{{ getSortIcon('isbn') }}</span>
+              </div>
+            </th>
+            <th 
+              class="sortable" 
+              (click)="onSort('title')" 
+              [class.sort-active]="filterParams.sortBy === 'title'"
+              title="Nhấn để sắp xếp theo Tiêu đề"
+            >
+              <div class="th-content">
+                <span>Tiêu Đề Sách</span>
+                <span class="sort-icon">{{ getSortIcon('title') }}</span>
+              </div>
+            </th>
+            <th style="width: 130px;">Thể Loại</th>
+            <th 
+              class="sortable" 
+              (click)="onSort('author')" 
+              style="width: 140px;"
+              [class.sort-active]="filterParams.sortBy === 'author'"
+              title="Nhấn để sắp xếp theo Tác giả"
+            >
+              <div class="th-content">
+                <span>Tác Giả</span>
+                <span class="sort-icon">{{ getSortIcon('author') }}</span>
+              </div>
+            </th>
+            <th 
+              class="sortable text-center" 
+              (click)="onSort('publicationYear')" 
+              style="width: 100px;"
+              [class.sort-active]="filterParams.sortBy === 'publicationYear'"
+              title="Nhấn để sắp xếp theo Năm XB"
+            >
+              <div class="th-content justify-content-center">
+                <span>Năm XB</span>
+                <span class="sort-icon">{{ getSortIcon('publicationYear') }}</span>
+              </div>
+            </th>
+            <th 
+              class="sortable text-end" 
+              (click)="onSort('price')" 
+              style="width: 120px;"
+              [class.sort-active]="filterParams.sortBy === 'price'"
+              title="Nhấn để sắp xếp theo Giá bán"
+            >
+              <div class="th-content justify-content-end">
+                <span>Giá Bán</span>
+                <span class="sort-icon">{{ getSortIcon('price') }}</span>
+              </div>
+            </th>
+            <th 
+              class="sortable text-end" 
+              (click)="onSort('rentalPrice')" 
+              style="width: 120px;"
+              [class.sort-active]="filterParams.sortBy === 'rentalPrice'"
+              title="Nhấn để sắp xếp theo Giá thuê"
+            >
+              <div class="th-content justify-content-end">
+                <span>Giá Thuê</span>
+                <span class="sort-icon">{{ getSortIcon('rentalPrice') }}</span>
+              </div>
+            </th>
+            <th class="text-center" style="width: 120px;">Trạng Thái</th>
+            <th 
+              class="sortable" 
+              (click)="onSort('createdAt')" 
+              style="width: 140px;" 
+              [class.sort-active]="filterParams.sortBy === 'createdAt'"
+              title="Nhấn để sắp xếp theo Ngày tạo"
+            >
+              <div class="th-content">
+                <span>Ngày Tạo</span>
+                <span class="sort-icon">{{ getSortIcon('createdAt') }}</span>
+              </div>
+            </th>
+            <th class="text-center" style="width: 180px;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Hiệu ứng Đang Tải -->
+          @if (isLoading) {
+            <tr>
+              <td colspan="12" class="text-center py-5">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Đang tải danh sách đầu sách...</div>
+              </td>
+            </tr>
+          } @else if (books.length === 0) {
+            <!-- Trạng thái trống (Không tìm thấy kết quả) -->
+            <tr>
+              <td colspan="12" class="text-center py-5 empty-row">
+                <div class="empty-icon">📭</div>
+                <div class="empty-title">Không tìm thấy đầu sách nào phù hợp</div>
+                <p class="empty-subtitle">Vui lòng thử lại với các tiêu chí tìm kiếm khác hoặc bấm "Làm mới".</p>
+              </td>
+            </tr>
+          } @else {
+            <!-- Danh sách từng dòng sách -->
+            @for (book of books; track book.id; let idx = $index) {
+              <tr class="book-row">
+                <td class="text-center text-muted">
+                  {{ currentPage * pageSize + idx + 1 }}
+                </td>
+                <td class="text-center">
+                  <div class="book-thumb-box">
+                    @if (book.coverImageUrl) {
+                      <img 
+                        [src]="getImageUrl(book.coverImageUrl)" 
+                        [alt]="book.title" 
+                        class="book-thumb" 
+                        (error)="onImageError($event)"
+                      />
+                      <div class="thumb-fallback" style="display: none;">📚</div>
+                    } @else {
+                      <div class="thumb-placeholder">📖</div>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="isbn-badge">{{ book.isbn }}</span>
+                </td>
+                <td>
+                  <div class="book-title-cell" [title]="book.title">
+                    <strong>{{ book.title }}</strong>
+                    @if (book.publisher) {
+                      <span class="book-publisher-sub">NXB: {{ book.publisher }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="category-badge">{{ book.categoryName || 'Chưa phân loại' }}</span>
+                </td>
+                <td>
+                  <span class="author-text">{{ book.author || '—' }}</span>
+                </td>
+                <td class="text-center">
+                  {{ book.publicationYear || '—' }}
+                </td>
+                <td class="text-end">
+                  <span class="price-text">{{ book.price != null ? (book.price | number:'1.0-0') + ' đ' : '—' }}</span>
+                </td>
+                <td class="text-end">
+                  <span class="rental-price-text">{{ book.rentalPrice != null ? (book.rentalPrice | number:'1.0-0') + ' đ' : '—' }}</span>
+                </td>
+                <td class="text-center">
+                  <span 
+                    class="badge status-badge" 
+                    [class.badge-unhide]="book.status === 'UNHIDE'" 
+                    [class.badge-hide]="book.status === 'HIDE'"
+                  >
+                    {{ book.status === 'UNHIDE' ? '🟢 Hiển thị' : '⚪ Đang ẩn' }}
+                  </span>
+                </td>
+                <td class="text-muted text-nowrap">
+                  {{ book.createdAt | date:'dd/MM/yyyy' }}
+                </td>
+                <td class="text-center">
+                  <div class="action-buttons">
+                    <!-- Nút Chỉnh Sửa -->
+                    <button 
+                      type="button" 
+                      class="btn-action btn-edit" 
+                      (click)="openEditModal(book)"
+                      title="Chỉnh sửa thông tin đầu sách"
+                    >
+                      ✏️ Sửa
+                    </button>
+
+                    <!-- Nút Bật/Tắt Hiển Thị -->
+                    <button 
+                      type="button" 
+                      class="btn-action btn-toggle"
+                      [class.btn-toggle-on]="book.status === 'UNHIDE'"
+                      [class.btn-toggle-off]="book.status === 'HIDE'"
+                      (click)="onToggleStatus(book)"
+                      [title]="book.status === 'UNHIDE' ? 'Nhấn để ẩn sách khỏi cổng bạn đọc' : 'Nhấn để hiển thị sách công khai'"
+                    >
+                      {{ book.status === 'UNHIDE' ? '👁️ Ẩn' : '👁️ Hiện' }}
+                    </button>
+
+                    <!-- Nút Xóa Sách -->
+                    <button 
+                      type="button" 
+                      class="btn-action btn-delete" 
+                      (click)="openDeleteModal(book)"
+                      title="Xóa đầu sách"
+                    >
+                      🗑️ Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 4. COMPONENT PHÂN TRANG TÁI SỬ DỤNG -->
+    <app-pagination 
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    ></app-pagination>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 5. MODAL DIALOG THÊM MỚI / CẬP NHẬT ĐẦU SÁCH                              -->
+<!-- ========================================================================= -->
+@if (isModalOpen) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          {{ isEditMode ? '✏️ Cập Nhật Đầu Sách' : '➕ Thêm Đầu Sách Mới' }}
+        </h3>
+        <button type="button" class="modal-close-btn" (click)="closeModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="bookForm" (ngSubmit)="onSaveBook()">
+        <div class="modal-body">
+          <!-- Hàng upload ảnh bìa sách -->
+          <div class="form-group image-upload-group">
+            <label class="form-label">
+              Ảnh bìa sách (Tải trước xem trước):
+            </label>
+            <div class="image-upload-wrapper">
+              @if (imagePreviewUrl) {
+                <!-- Khung Xem Trước Ảnh Bìa -->
+                <div class="image-preview-card">
+                  <img [src]="imagePreviewUrl" alt="Bìa sách" class="image-preview" />
+                  <div class="image-preview-actions">
+                    <label class="btn-img-action btn-change" title="Đổi ảnh khác">
+                      🔄 Đổi ảnh
+                      <input 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/webp, image/gif" 
+                        (change)="onFileSelected($event)" 
+                        hidden 
+                        [disabled]="isUploadingImage"
+                      />
+                    </label>
+                    <button 
+                      type="button" 
+                      class="btn-img-action btn-remove" 
+                      (click)="onRemoveImage()" 
+                      title="Xóa ảnh này"
+                      [disabled]="isUploadingImage"
+                    >
+                      🗑️ Xóa ảnh
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <!-- Khung Chọn File Ảnh -->
+                <label class="image-dropzone" [class.is-uploading]="isUploadingImage">
+                  <input 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/webp, image/gif" 
+                    (change)="onFileSelected($event)" 
+                    hidden 
+                    [disabled]="isUploadingImage"
+                  />
+                  @if (isUploadingImage) {
+                    <div class="uploading-state">
+                      <div class="upload-spinner"></div>
+                      <span class="upload-text">Đang tải ảnh bìa lên server...</span>
+                    </div>
+                  } @else {
+                    <div class="dropzone-content">
+                      <span class="upload-icon">📖</span>
+                      <span class="upload-title">Nhấn vào đây để tải ảnh bìa sách</span>
+                      <span class="upload-hint">Định dạng JPG, PNG, WEBP, GIF (Tối đa 10MB)</span>
+                    </div>
+                  }
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Grid các trường thông tin sách -->
+          <div class="modal-grid">
+            <!-- Tiêu Đề Sách -->
+            <div class="form-group col-span-2">
+              <label for="modalTitle" class="form-label">
+                Tiêu đề sách <span class="text-danger">*</span>:
+              </label>
+              <input 
+                id="modalTitle" 
+                type="text" 
+                class="form-control" 
+                formControlName="title"
+                placeholder="Nhập tên đầu sách đầy đủ..."
+                [class.is-invalid]="f['title'].touched && f['title'].invalid"
+              />
+              @if (f['title'].touched && f['title'].invalid) {
+                <div class="invalid-feedback">
+                  <span>Tiêu đề sách là bắt buộc (tối đa 255 ký tự)!</span>
+                </div>
+              }
+            </div>
+
+            <!-- Mã ISBN -->
+            <div class="form-group">
+              <label for="modalIsbn" class="form-label">
+                Mã ISBN <span class="text-danger">*</span>:
+              </label>
+              <input 
+                id="modalIsbn" 
+                type="text" 
+                class="form-control" 
+                formControlName="isbn"
+                placeholder="Ví dụ: 9786045678901"
+                [class.is-invalid]="f['isbn'].touched && f['isbn'].invalid"
+              />
+              @if (f['isbn'].touched && f['isbn'].invalid) {
+                <div class="invalid-feedback">
+                  <span>Mã ISBN là bắt buộc (tối đa 20 ký tự)!</span>
+                </div>
+              }
+            </div>
+
+            <!-- Thể Loại Sách -->
+            <div class="form-group">
+              <label for="modalCategoryId" class="form-label">
+                Thể loại <span class="text-danger">*</span>:
+              </label>
+              <select 
+                id="modalCategoryId" 
+                class="form-select" 
+                formControlName="categoryId"
+                [class.is-invalid]="f['categoryId'].touched && f['categoryId'].invalid"
+              >
+                <option [ngValue]="null">-- Chọn thể loại sách --</option>
+                @for (cat of categoryList; track cat.id) {
+                  <option [ngValue]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+              @if (f['categoryId'].touched && f['categoryId'].invalid) {
+                <div class="invalid-feedback">
+                  <span>Vui lòng chọn thể loại sách!</span>
+                </div>
+              }
+            </div>
+
+            <!-- Tác Giả -->
+            <div class="form-group">
+              <label for="modalAuthor" class="form-label">Tác giả:</label>
+              <input 
+                id="modalAuthor" 
+                type="text" 
+                class="form-control" 
+                formControlName="author"
+                placeholder="Ví dụ: Nam Cao, Nguyễn Nhật Ánh..."
+              />
+            </div>
+
+            <!-- Nhà Xuất Bản -->
+            <div class="form-group">
+              <label for="modalPublisher" class="form-label">Nhà xuất bản:</label>
+              <input 
+                id="modalPublisher" 
+                type="text" 
+                class="form-control" 
+                formControlName="publisher"
+                placeholder="Ví dụ: NXB Trẻ, NXB Kim Đồng..."
+              />
+            </div>
+
+            <!-- Năm Xuất Bản -->
+            <div class="form-group">
+              <label for="modalPubYear" class="form-label">Năm xuất bản:</label>
+              <input 
+                id="modalPubYear" 
+                type="number" 
+                class="form-control" 
+                formControlName="publicationYear"
+                placeholder="Ví dụ: 2024"
+              />
+            </div>
+
+            <!-- Trạng Thái Hiển Thị -->
+            <div class="form-group">
+              <label for="modalStatus" class="form-label">Trạng thái hiển thị:</label>
+              <select id="modalStatus" class="form-select" formControlName="status">
+                <option value="UNHIDE">🟢 Hiển thị công khai (UNHIDE)</option>
+                <option value="HIDE">⚪ Ẩn (HIDE)</option>
+              </select>
+            </div>
+
+            <!-- Giá Bán -->
+            <div class="form-group">
+              <label for="modalPrice" class="form-label">Giá bán (VNĐ):</label>
+              <input 
+                id="modalPrice" 
+                type="number" 
+                class="form-control" 
+                formControlName="price"
+                placeholder="Ví dụ: 120000"
+              />
+            </div>
+
+            <!-- Giá Thuê -->
+            <div class="form-group">
+              <label for="modalRentalPrice" class="form-label">Giá thuê (VNĐ):</label>
+              <input 
+                id="modalRentalPrice" 
+                type="number" 
+                class="form-control" 
+                formControlName="rentalPrice"
+                placeholder="Ví dụ: 15000"
+              />
+            </div>
+
+            <!-- Mô Tả / Giới Thiệu -->
+            <div class="form-group col-span-2">
+              <label for="modalDescription" class="form-label">Mô tả tóm tắt nội dung:</label>
+              <textarea 
+                id="modalDescription" 
+                class="form-control" 
+                rows="3" 
+                formControlName="description"
+                placeholder="Tóm tắt nội dung cuốn sách..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()" [disabled]="isSubmitting">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+            @if (isSubmitting) {
+              <span class="btn-spinner"></span> Đang lưu...
+            } @else {
+              {{ isEditMode ? '💾 Cập Nhật' : '➕ Thêm Mới' }}
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- 6. MODAL XÁC NHẬN XÓA ĐẦU SÁCH                                            -->
+<!-- ========================================================================= -->
+@if (isDeleteModalOpen && bookToDelete) {
+  <div class="modal-backdrop" (click)="closeDeleteModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title text-danger">⚠️ Xác Nhận Xóa Sách</h3>
+        <button type="button" class="modal-close-btn" (click)="closeDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn xóa đầu sách sau khỏi hệ thống?</p>
+        <div class="delete-book-info">
+          <strong>{{ bookToDelete.title }}</strong>
+          <span class="text-muted d-block">ISBN: {{ bookToDelete.isbn }}</span>
+        </div>
+        <p class="text-warning text-sm mt-3">
+          * Lưu ý: Nếu sách đã phát sinh giao dịch mượn, hệ thống sẽ từ chối xóa để đảm bảo toàn vẹn dữ liệu.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeDeleteModal()" [disabled]="isDeleting">
+          Hủy Bỏ
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting">
+          @if (isDeleting) {
+            <span class="btn-spinner"></span> Đang xóa...
+          } @else {
+            🗑️ Xóa Vĩnh Viễn
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

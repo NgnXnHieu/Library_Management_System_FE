@@ -1,0 +1,174 @@
+/* Vị trí cố định của khung chứa thông báo nổi trên góc màn hình chính */
+.toast-wrapper {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: calc(100vw - 48px);
+  pointer-events: none; /* Tránh cản trở click chuột vào các vùng trống */
+}
+
+/* Thẻ thông báo Toast */
+.toast-item {
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto; /* Cho phép click chuột vào thông báo */
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-left: 6px solid #6c757d;
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.18);
+}
+
+/* Icon */
+.toast-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Phần nội dung */
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+  color: #1e293b;
+}
+
+.toast-message {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #475569;
+  word-break: break-word;
+}
+
+/* Nút đóng */
+.toast-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+/* Thanh thời gian tự tắt */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.12);
+  animation: progressLinear linear forwards;
+}
+
+/* 1. Loại Thành Công (Success) */
+.toast-success {
+  border-left-color: #10b981;
+}
+.toast-success .toast-title {
+  color: #065f46;
+}
+.toast-success .toast-progress {
+  background: #10b981;
+}
+
+/* 2. Loại Lỗi / Quyền hạn (Error) */
+.toast-error {
+  border-left-color: #ef4444;
+  background: #fffdfd;
+}
+.toast-error .toast-title {
+  color: #991b1b;
+}
+.toast-error .toast-progress {
+  background: #ef4444;
+}
+
+/* 3. Loại Cảnh báo / Chưa đăng nhập (Warning) */
+.toast-warning {
+  border-left-color: #f59e0b;
+  background: #fffdfa;
+}
+.toast-warning .toast-title {
+  color: #92400e;
+}
+.toast-warning .toast-progress {
+  background: #f59e0b;
+}
+
+/* 4. Loại Thông tin (Info) */
+.toast-info {
+  border-left-color: #3b82f6;
+}
+.toast-info .toast-title {
+  color: #1e40af;
+}
+.toast-info .toast-progress {
+  background: #3b82f6;
+}
+
+/* Hiệu ứng trượt vào từ cạnh phải */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hiệu ứng thu ngắn dần thanh tiến trình */
+@keyframes progressLinear {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Responsive trên điện thoại */
+@media (max-width: 576px) {
+  .toast-wrapper {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: 100%;
+  }
+}

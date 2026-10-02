@@ -1,0 +1,114 @@
+<div class="container page-container">
+  
+  <!-- Tiêu đề trang -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quản Lý Phiếu Mượn Sách</h1>
+      <p class="page-subtitle">Danh sách phiếu mượn toàn hệ thống (Dữ liệu từ API Backend Spring Boot)</p>
+    </div>
+  </div>
+
+  <!-- Thanh tìm kiếm và bộ lọc -->
+  <div class="card filter-card">
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>Tìm kiếm</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Nhập mã phiếu, tên độc giả..." 
+          [(ngModel)]="filter.keyword"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <div class="filter-item">
+        <label>Trạng thái</label>
+        <select class="form-control" [(ngModel)]="filter.status" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả trạng thái --</option>
+          <option value="BORROWED">Đang mượn</option>
+          <option value="RETURNED">Đã trả</option>
+          <option value="OVERDUE">Quá hạn</option>
+        </select>
+      </div>
+
+      <div class="filter-action">
+        <button class="btn btn-primary" (click)="onSearch()">🔍 Lọc dữ liệu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng hiển thị danh sách -->
+  <div class="card table-card">
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Đang tải dữ liệu từ máy chủ...</p>
+      </div>
+    } @else if (errorMessage) {
+      <div class="alert alert-danger">
+        ⚠️ {{ errorMessage }}
+      </div>
+    } @else if (borrowSlips.length === 0) {
+      <div class="empty-state">
+        <p>Không tìm thấy phiếu mượn nào phù hợp với bộ lọc!</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Mã Phiếu</th>
+              <th>Độc Giả</th>
+              <th>Chi Nhánh</th>
+              <th>Ngày Mượn</th>
+              <th>Hạn Trả</th>
+              <th>Số Lượng</th>
+              <th>Tổng Tiền</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (slip of borrowSlips; track slip.id) {
+              <tr>
+                <td><strong>{{ slip.borrowCode }}</strong></td>
+                <td>{{ slip.customerName }}</td>
+                <td>{{ slip.branchName }}</td>
+                <td>{{ slip.borrowedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ slip.dueAt | date:'dd/MM/yyyy' }}</td>
+                <td>{{ slip.totalQuantity }} cuốn</td>
+                <td>{{ slip.totalAmount | number:'1.0-0' }} đ</td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(slip.status)">
+                    {{ getStatusLabel(slip.status) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination-footer">
+        <span class="total-count">Tổng cộng: <strong>{{ totalElements }}</strong> phiếu mượn</span>
+        
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-secondary btn-sm" 
+            [disabled]="filter.page === 0" 
+            (click)="onPageChange(filter.page! - 1)">
+            ◀ Trước
+          </button>
+          <span class="current-page">Trang {{ filter.page! + 1 }} / {{ totalPages || 1 }}</span>
+          <button 
+            class="btn btn-secondary btn-sm" 
+            [disabled]="filter.page! >= totalPages - 1" 
+            (click)="onPageChange(filter.page! + 1)">
+            Sau ▶
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

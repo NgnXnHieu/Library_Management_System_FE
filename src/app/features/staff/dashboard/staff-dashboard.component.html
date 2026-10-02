@@ -1,0 +1,78 @@
+<div class="staff-dashboard">
+  <!-- 1. HEADER BÀN LÀM VIỆC CỦA NHÂN VIÊN QUẦY -->
+  <div class="page-header">
+    <div>
+      <div class="role-tag">👤 GIAO DIỆN NHÂN VIÊN QUẦY</div>
+      <h1 class="page-title">Ca Trực Thủ Thư Tại Quầy</h1>
+      <p class="page-subtitle">
+        Nhân viên: <strong>{{ user?.fullName }}</strong> | 
+        Điểm trực: <strong>{{ user?.branchName || 'Chi Nhánh 1' }}</strong>
+      </p>
+    </div>
+
+    <!-- Nút hành động quầy -->
+    <div class="action-buttons">
+      <a routerLink="/staff/borrow-slips" class="btn btn-primary">
+        <span>➕</span> Lập Phiếu Mượn Cho Độc Giả
+      </a>
+      <a routerLink="/staff/borrow-slips" class="btn btn-secondary">
+        <span>📥</span> Nhận Trả Sách Nhanh
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. THẺ CHỈ SỐ CA TRỰC -->
+  <div class="stats-grid">
+    @for (s of stats; track s.title) {
+      <div class="stat-card {{ s.colorClass }}">
+        <div class="stat-icon-wrapper">{{ s.icon }}</div>
+        <div class="stat-body">
+          <span class="stat-title">{{ s.title }}</span>
+          <h2 class="stat-value">{{ s.value }}</h2>
+          <span class="stat-change">{{ s.change }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- 3. DANH SÁCH CẦN XỬ LÝ GẤP TRONG CA -->
+  <div class="card table-card">
+    <div class="card-header-flex">
+      <h3>⏰ Danh Sách Sách Đến Hạn Trả Hôm Nay & Quá Hạn</h3>
+      <span class="badge badge-warning">Cần liên hệ nhắc trả</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Mã Phiếu</th>
+            <th>Tên Độc Giả</th>
+            <th>Tên Sách</th>
+            <th>Hạn Trả</th>
+            <th>Số Điện Thoại</th>
+            <th>Thao Tác Quầy</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (slip of urgentSlips; track slip.id) {
+            <tr>
+              <td><strong>{{ slip.id }}</strong></td>
+              <td>{{ slip.patron }}</td>
+              <td>{{ slip.book }}</td>
+              <td>
+                <span class="badge" [class.badge-danger]="slip.dueDate.includes('Quá hạn')" [class.badge-warning]="!slip.dueDate.includes('Quá hạn')">
+                  {{ slip.dueDate }}
+                </span>
+              </td>
+              <td>{{ slip.phone }}</td>
+              <td>
+                <button class="btn btn-sm btn-primary">Tiếp nhận trả</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="login-wrapper">
+  <div class="card login-card">
+    <div class="login-header">
+      <div class="login-icon">🔐</div>
+      <h2 class="login-title">Đăng Nhập Hệ Thống</h2>
+      <p class="login-subtitle">Nhập tài khoản để truy cập vào hệ thống thư viện</p>
+    </div>
+
+    <!-- Thông báo lỗi khi Backend trả về lỗi -->
+    @if (errorMessage) {
+      <div class="alert alert-danger">
+        ⚠️ {{ errorMessage }}
+      </div>
+    }
+
+    <!-- FORM REACTIVE: Gắn FormGroup qua [formGroup]="loginForm" -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Ô nhập Tên đăng nhập -->
+      <div class="form-group">
+        <label for="username" class="form-label">Tên đăng nhập <span class="required">*</span></label>
+        <input 
+          id="username"
+          type="text" 
+          class="form-control" 
+          [class.is-invalid]="f['username'].touched && f['username'].invalid"
+          formControlName="username" 
+          placeholder="Nhập tên đăng nhập (ví dụ: admin, staff)..."
+        />
+        
+        <!-- Bắt lỗi Reactive Form cho Username -->
+        @if (f['username'].touched && f['username'].invalid) {
+          <div class="invalid-feedback">
+            @if (f['username'].errors?.['required']) {
+              <span>Tài khoản không được để trống!</span>
+            }
+            @if (f['username'].errors?.['minlength']) {
+              <span>Tài khoản phải từ 10 ký tự trở lên!</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Ô nhập Mật khẩu -->
+      <div class="form-group">
+        <label for="password" class="form-label">Mật khẩu <span class="required">*</span></label>
+        <input 
+          id="password"
+          type="password" 
+          class="form-control" 
+          [class.is-invalid]="f['password'].touched && f['password'].invalid"
+          formControlName="password" 
+          placeholder="Nhập mật khẩu..."
+        />
+
+        <!-- Bắt lỗi Reactive Form cho Password -->
+        @if (f['password'].touched && f['password'].invalid) {
+          <div class="invalid-feedback">
+            @if (f['password'].errors?.['required']) {
+              <span>Mật khẩu không được để trống!</span>
+            }
+            @if (f['password'].errors?.['pattern']) {
+              <span>Mật khẩu phải từ 8 ký tự trở lên, chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt!</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Nút bấm Đăng nhập -->
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="isLoading">
+        @if (isLoading) {
+          <span>Đang xác thực...</span>
+        } @else {
+          <span>Đăng Nhập</span>
+        }
+      </button>
+    </form>
+  </div>
+</div>

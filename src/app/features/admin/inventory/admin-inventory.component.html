@@ -1,0 +1,437 @@
+<div class="admin-inventory-page">
+  <!-- 1. Header Trang Quản Trị Kho -->
+  <div class="page-header">
+    <div>
+      <div class="role-tag">🏛️ QUẢN TRỊ VIÊN TOÀN QUỐC</div>
+      <h1 class="page-title">Quản Lý Tồn Kho Sách Toàn Chuỗi</h1>
+      <p class="page-subtitle">
+        Theo dõi số lượng tồn kho, định vị kệ sách và điều phối nhập thêm sách tại tất cả các chi nhánh thư viện.
+      </p>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-secondary" (click)="loadInventories()" [disabled]="isLoading">
+        <span>🔄</span> Làm Mới Dữ Liệu
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. Bộ Lọc Tìm Kiếm Đa Tiêu Chí -->
+  <div class="card filter-card">
+    <div class="filter-grid">
+      <!-- 2.1. Lọc Chi Nhánh -->
+      <div class="filter-group">
+        <label for="filterBranch" class="form-label">🏢 Chi nhánh:</label>
+        <select id="filterBranch" class="form-select" [(ngModel)]="filterParams.branchId" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả chi nhánh --</option>
+          @for (b of branchList; track b.id) {
+            <option [ngValue]="b.id">{{ b.name }} ({{ b.code }})</option>
+          }
+        </select>
+      </div>
+
+      <!-- 2.2. Lọc Thể Loại -->
+      <div class="filter-group">
+        <label for="filterCategory" class="form-label">🏷️ Thể loại:</label>
+        <select id="filterCategory" class="form-select" [(ngModel)]="filterParams.categoryId" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả thể loại --</option>
+          @for (c of categoryList; track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- 2.3. Tìm kiếm Tên Sách / ISBN -->
+      <div class="filter-group search-group">
+        <label for="filterKeyword" class="form-label">🔍 Tiêu đề sách:</label>
+        <input 
+          id="filterKeyword"
+          type="text" 
+          class="form-control" 
+          placeholder="Nhập tên sách..." 
+          [(ngModel)]="filterParams.bookTitle"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 2.4. Lọc Vị Trí Kệ -->
+      <div class="filter-group">
+        <label for="filterShelf" class="form-label">📍 Vị trí kệ:</label>
+        <input 
+          id="filterShelf"
+          type="text" 
+          class="form-control" 
+          placeholder="Ví dụ: Kệ A-01..." 
+          [(ngModel)]="filterParams.shelfLocation"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- 2.5. Trạng Thái Hiển Thị -->
+      <div class="filter-group">
+        <label for="filterStatus" class="form-label">Trạng thái:</label>
+        <select id="filterStatus" class="form-select" [(ngModel)]="filterParams.status" (change)="onSearch()">
+          <option [ngValue]="undefined">-- Tất cả trạng thái --</option>
+          <option value="UNHIDE">🟢 Đang hiển thị (UNHIDE)</option>
+          <option value="HIDE">⚪ Đang ẩn (HIDE)</option>
+        </select>
+      </div>
+
+      <!-- 2.6. Sắp Xếp -->
+      <div class="filter-group">
+        <label for="filterSort" class="form-label">Sắp xếp theo:</label>
+        <select id="filterSort" class="form-select" [(ngModel)]="filterParams.sortBy" (change)="onSearch()">
+          <option value="updatedAt">Mới cập nhật</option>
+          <option value="totalQuantity">Tổng số lượng</option>
+          <option value="availableQuantity">Số lượng khả dụng</option>
+          <option value="bookTitle">Tên đầu sách</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Hàng nút thao tác lọc -->
+    <div class="filter-actions">
+      <span class="total-badge">
+        Tổng số: <strong>{{ totalElements }}</strong> bản ghi kho
+      </span>
+      <div class="btn-group">
+        <button class="btn btn-primary" (click)="onSearch()">
+          <span>🔍</span> Tìm Kiếm
+        </button>
+        <button class="btn btn-secondary" (click)="onResetFilter()">
+          <span>🔄</span> Đặt Lại
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Bảng Danh Sách Tồn Kho Toàn Chuỗi -->
+  <div class="card table-card">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-img">Bìa Sách</th>
+            <th>Thông Tin Đầu Sách</th>
+            <th>Chi Nhánh Lưu Trữ</th>
+            <th>Vị Trí Kệ Sách</th>
+            <th>Giá Thuê / Giá Bìa</th>
+            <th class="text-center">Tổng Kho</th>
+            <th class="text-center">Khả Dụng</th>
+            <th class="text-center">Trạng Thái</th>
+            <th class="text-center col-action">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading) {
+            <tr>
+              <td colspan="9" class="text-center py-5">
+                <div class="spinner"></div>
+                <p class="text-muted mt-2">Đang tải dữ liệu tồn kho toàn hệ thống...</p>
+              </td>
+            </tr>
+          } @else if (inventories.length === 0) {
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <div class="empty-icon">📦</div>
+                <p class="mt-2">Không tìm thấy bản ghi tồn kho nào phù hợp với bộ lọc!</p>
+              </td>
+            </tr>
+          } @else {
+            @for (item of inventories; track item.id) {
+              <tr>
+                <!-- 1. Bìa sách -->
+                <td class="col-img">
+                  <div class="book-cover-wrapper">
+                    @if (item.coverImageUrl) {
+                      <img 
+                        [src]="getImageUrl(item.coverImageUrl)" 
+                        [alt]="item.bookTitle" 
+                        class="book-thumb" 
+                        (error)="onImageError($event)"
+                      />
+                      <div class="book-thumb-placeholder" style="display: none;">📖</div>
+                    } @else {
+                      <div class="book-thumb-placeholder">📖</div>
+                    }
+                  </div>
+                </td>
+
+                <!-- 2. Thông tin sách -->
+                <td>
+                  <div class="book-info">
+                    <span class="book-title" [title]="item.bookTitle">{{ item.bookTitle }}</span>
+                    <div class="book-meta">
+                      <span class="meta-tag isbn-tag">ISBN: {{ item.isbn }}</span>
+                      @if (item.categoryName) {
+                        <span class="meta-tag category-tag">{{ item.categoryName }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <!-- 3. Chi nhánh -->
+                <td>
+                  <span class="branch-pill">🏛️ {{ item.branchName }}</span>
+                </td>
+
+                <!-- 4. Vị trí kệ -->
+                <td>
+                  @if (item.shelfLocation) {
+                    <span class="shelf-badge">📍 {{ item.shelfLocation }}</span>
+                  } @else {
+                    <span class="text-muted text-italic">Chưa xếp kệ</span>
+                  }
+                </td>
+
+                <!-- 5. Giá sách -->
+                <td>
+                  <div class="price-info">
+                    <span class="rental-price">{{ item.rentalPrice | number }} đ/ngày</span>
+                    <span class="original-price text-muted">Gốc: {{ item.price | number }} đ</span>
+                  </div>
+                </td>
+
+                <!-- 6. Tổng số lượng -->
+                <td class="text-center">
+                  <span class="badge badge-total">{{ item.totalQuantity }} cuốn</span>
+                </td>
+
+                <!-- 7. Khả dụng -->
+                <td class="text-center">
+                  @if (item.availableQuantity > 0) {
+                    <span class="badge badge-success">{{ item.availableQuantity }} cuốn</span>
+                  } @else {
+                    <span class="badge badge-danger">Hết sách (0)</span>
+                  }
+                </td>
+
+                <!-- 8. Trạng thái hiển thị -->
+                <td class="text-center">
+                  @if (item.status === 'UNHIDE') {
+                    <span class="badge badge-active" title="Đang hiển thị công khai trên hệ thống">🟢 Đang hiện</span>
+                  } @else {
+                    <span class="badge badge-inactive" title="Đang bị ẩn">⚪ Đang ẩn</span>
+                  }
+                </td>
+
+                <!-- 9. Cột thao tác -->
+                <td class="text-center col-action">
+                  <div class="action-btn-group">
+                    <!-- Nút Nhập Kho -->
+                    <button 
+                      class="btn btn-sm btn-import" 
+                      title="Nhập thêm sách vào kho chi nhánh này"
+                      (click)="openImportModal(item)"
+                    >
+                      📥 Nhập Kho
+                    </button>
+
+                    <!-- Nút Sửa vị trí kệ / trạng thái -->
+                    <button 
+                      class="btn btn-sm btn-secondary" 
+                      title="Sửa vị trí kệ sách và trạng thái"
+                      (click)="openEditModal(item)"
+                    >
+                      ✏️ Sửa
+                    </button>
+
+                    <!-- Nút Bật/Tắt Trạng thái -->
+                    <button 
+                      class="btn btn-sm"
+                      [class.btn-warning]="item.status === 'UNHIDE'"
+                      [class.btn-outline]="item.status === 'HIDE'"
+                      [title]="item.status === 'UNHIDE' ? 'Nhấn để ẩn sách này' : 'Nhấn để hiển thị sách này'"
+                      (click)="onToggleStatus(item)"
+                    >
+                      {{ item.status === 'UNHIDE' ? '🙈 Ẩn' : '👁️ Hiện' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Phân Trang -->
+    @if (!isLoading && totalPages > 0) {
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [pageSize]="pageSize"
+          [totalElements]="totalElements"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+        ></app-pagination>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 4. MODAL SỬA THÔNG TIN TỒN KHO (VỊ TRÍ KỆ, TRẠNG THÁI)                   -->
+<!-- ========================================================================= -->
+@if (isEditModalOpen && editingInventory) {
+  <div class="modal-backdrop" (click)="closeEditModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          ✏️ Sửa Thông Tin Kho: <span class="text-primary">{{ editingInventory.bookTitle }}</span>
+        </h3>
+        <button type="button" class="modal-close-btn" (click)="closeEditModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="onSubmitEdit()">
+        <div class="modal-body">
+          <div class="info-banner mb-3">
+            <div class="banner-item">
+              <span class="label">🏢 Chi nhánh:</span>
+              <strong>{{ editingInventory.branchName }}</strong>
+            </div>
+            <div class="banner-item">
+              <span class="label">📚 Tồn kho hiện tại:</span>
+              <strong>{{ editingInventory.availableQuantity }} / {{ editingInventory.totalQuantity }} cuốn</strong>
+            </div>
+          </div>
+
+          <!-- Vị trí kệ -->
+          <div class="form-group mb-3">
+            <label for="editShelf" class="form-label">
+              📍 Vị trí kệ lưu trữ:
+            </label>
+            <input 
+              id="editShelf"
+              type="text" 
+              class="form-control" 
+              placeholder="Ví dụ: Kệ A-02, Tầng 3, Dãy trái" 
+              formControlName="shelfLocation"
+              maxlength="100"
+            />
+            <span class="hint-text text-muted">Nhập vị trí cụ thể giúp thủ thư và độc giả dễ dàng tìm sách.</span>
+          </div>
+
+          <!-- Trạng thái hiển thị -->
+          <div class="form-group mb-3">
+            <label for="editStatus" class="form-label">
+              Trạng thái hiển thị:
+            </label>
+            <select id="editStatus" class="form-select" formControlName="status">
+              <option value="UNHIDE">🟢 Đang hiển thị công khai (UNHIDE)</option>
+              <option value="HIDE">⚪ Đang ẩn khỏi hệ thống (HIDE)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeEditModal()" [disabled]="isUpdating">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="isUpdating">
+            @if (isUpdating) {
+              <span class="spinner-small"></span> Đang Lưu...
+            } @else {
+              💾 Lưu Thay Đổi
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- 5. MODAL NHẬP KHO SÁCH (CỘNG DỒN SỐ LƯỢNG)                               -->
+<!-- ========================================================================= -->
+@if (isImportModalOpen && importingInventory) {
+  <div class="modal-backdrop" (click)="closeImportModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          📥 Nhập Kho Sách: <span class="text-primary">{{ importingInventory.bookTitle }}</span>
+        </h3>
+        <button type="button" class="modal-close-btn" (click)="closeImportModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="importForm" (ngSubmit)="onSubmitImport()">
+        <div class="modal-body">
+          <!-- Tóm tắt đầu sách nhập -->
+          <div class="import-preview mb-3">
+            <div class="preview-cover">
+              @if (importingInventory.coverImageUrl) {
+                <img 
+                  [src]="getImageUrl(importingInventory.coverImageUrl)" 
+                  [alt]="importingInventory.bookTitle" 
+                  (error)="onImageError($event)"
+                />
+                <div class="preview-cover-placeholder" style="display: none;">📖</div>
+              } @else {
+                <div class="preview-cover-placeholder">📖</div>
+              }
+            </div>
+            <div class="preview-details">
+              <h4>{{ importingInventory.bookTitle }}</h4>
+              <p class="text-muted mb-1">Mã ISBN: <strong>{{ importingInventory.isbn }}</strong></p>
+              <p class="text-muted mb-1">🏢 Chi nhánh tiếp nhận: <strong>{{ importingInventory.branchName }}</strong></p>
+              <div class="stock-pills">
+                <span class="stock-pill">Tổng hiện tại: <strong>{{ importingInventory.totalQuantity }}</strong></span>
+                <span class="stock-pill">Khả dụng: <strong>{{ importingInventory.availableQuantity }}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input số lượng sách nhập -->
+          <div class="form-group mb-3">
+            <label for="importQuantity" class="form-label">
+              Số lượng nhập thêm (cuốn) <span class="text-danger">*</span>:
+            </label>
+            <input 
+              id="importQuantity"
+              type="number" 
+              class="form-control form-control-lg" 
+              placeholder="Nhập số lượng sách cần bổ sung..."
+              formControlName="quantity"
+              min="1"
+              autofocus
+            />
+            @if (importForm.get('quantity')?.touched && importForm.get('quantity')?.invalid) {
+              <span class="text-danger hint-text">
+                Số lượng nhập kho phải là số nguyên dương lớn hơn hoặc bằng 1.
+              </span>
+            }
+          </div>
+
+          <!-- Dự tính sau khi nhập -->
+          @if (importForm.get('quantity')?.value > 0) {
+            <div class="calculation-box">
+              <p class="mb-1">📊 <strong>Dự tính sau khi nhập kho:</strong></p>
+              <p class="mb-0 text-success">
+                Tổng số lượng: <strong>{{ importingInventory.totalQuantity + (+importForm.get('quantity')?.value || 0) }}</strong> cuốn 
+                (+{{ importForm.get('quantity')?.value }})
+              </p>
+              <p class="mb-0 text-success">
+                Khả dụng: <strong>{{ importingInventory.availableQuantity + (+importForm.get('quantity')?.value || 0) }}</strong> cuốn 
+                (+{{ importForm.get('quantity')?.value }})
+              </p>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeImportModal()" [disabled]="isImporting">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="btn btn-success" [disabled]="isImporting || importForm.invalid">
+            @if (isImporting) {
+              <span class="spinner-small"></span> Đang Nhập Kho...
+            } @else {
+              📥 Xác Nhận Nhập Kho
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
