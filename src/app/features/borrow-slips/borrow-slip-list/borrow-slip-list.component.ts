@@ -2,7 +2,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BorrowSlipService } from '../services/borrow-slip.service';
-import { BorrowSlipFilterParams, BorrowSlipResponseDto, BorrowStatus } from '../../../shared/models/borrow-slip.model';
+import { 
+  BorrowSlipFilterParams, 
+  BorrowSlipResponseDto, 
+  BorrowStatus,
+  isBorrowSlipOverdue,
+  getBorrowSlipOverdueDays
+} from '../../../shared/models/borrow-slip.model';
 
 /**
  * TẦNG COMPONENT: Chịu trách nhiệm hiển thị giao diện danh sách phiếu mượn.
@@ -85,11 +91,25 @@ export class BorrowSlipListComponent implements OnInit {
     }
   }
 
+  isOverdue(slip: BorrowSlipResponseDto | null | undefined): boolean {
+    return isBorrowSlipOverdue(slip);
+  }
+
+  getOverdueDays(slip: BorrowSlipResponseDto | null | undefined): number {
+    return getBorrowSlipOverdueDays(slip);
+  }
+
   /**
    * Hàm tiện ích trả về class CSS hiển thị màu sắc theo trạng thái mượn
    */
-  getStatusBadgeClass(status: BorrowStatus): string {
-    switch (status) {
+  getStatusBadgeClass(slipOrStatus: BorrowSlipResponseDto | BorrowStatus): string {
+    if (typeof slipOrStatus === 'object' && slipOrStatus !== null) {
+      if (this.isOverdue(slipOrStatus)) {
+        return 'badge-danger';
+      }
+      slipOrStatus = slipOrStatus.status;
+    }
+    switch (slipOrStatus) {
       case 'BORROWED': return 'badge-info';
       case 'RETURNED': return 'badge-success';
       case 'OVERDUE': return 'badge-danger';
@@ -100,12 +120,18 @@ export class BorrowSlipListComponent implements OnInit {
   /**
    * Hàm dịch trạng thái sang tiếng Việt thân thiện
    */
-  getStatusLabel(status: BorrowStatus): string {
-    switch (status) {
+  getStatusLabel(slipOrStatus: BorrowSlipResponseDto | BorrowStatus): string {
+    if (typeof slipOrStatus === 'object' && slipOrStatus !== null) {
+      if (this.isOverdue(slipOrStatus)) {
+        return 'Quá hạn';
+      }
+      slipOrStatus = slipOrStatus.status;
+    }
+    switch (slipOrStatus) {
       case 'BORROWED': return 'Đang mượn';
       case 'RETURNED': return 'Đã trả';
       case 'OVERDUE': return 'Quá hạn';
-      default: return status;
+      default: return slipOrStatus;
     }
   }
 }

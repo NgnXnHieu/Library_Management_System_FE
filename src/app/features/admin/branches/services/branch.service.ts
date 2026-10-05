@@ -7,6 +7,7 @@ import {
   BranchCreateRequest, 
   BranchFilterRequest, 
   BranchResponseDto, 
+  BranchStatisticResponseDto,
   BranchStatus, 
   BranchUpdateRequest 
 } from '../../../../shared/models/branch.model';
@@ -64,6 +65,40 @@ export class BranchService {
 
     return this.http.get<ApiResponse<PageResponse<BranchResponseDto>>>(
       `${this.baseUrl}/admin/branches`,
+      { params }
+    );
+  }
+
+  /**
+   * Gọi API Admin lấy danh sách phân trang thống kê chi nhánh (Tổng kho, sách còn, đang mượn, lượt mượn, doanh thu)
+   * @param filter Tham số tìm kiếm theo mã/tên, trạng thái và phân trang
+   */
+  getBranchStatistics(filter?: BranchFilterRequest): Observable<ApiResponse<PageResponse<BranchStatisticResponseDto>>> {
+    let params = new HttpParams();
+
+    if (filter?.code && filter.code.trim()) {
+      params = params.set('code', filter.code.trim());
+    }
+    if (filter?.name && filter.name.trim()) {
+      params = params.set('name', filter.name.trim());
+    }
+    if (filter?.status && filter.status.trim()) {
+      params = params.set('status', filter.status.trim());
+    }
+    if (filter?.fromDate && filter.fromDate.trim()) {
+      params = params.set('fromDate', filter.fromDate.trim());
+    }
+    if (filter?.toDate && filter.toDate.trim()) {
+      params = params.set('toDate', filter.toDate.trim());
+    }
+
+    params = params.set('page', (filter?.page ?? 0).toString());
+    params = params.set('size', (filter?.size ?? 10).toString());
+    params = params.set('sortBy', filter?.sortBy ?? 'createdAt');
+    params = params.set('sortDir', filter?.sortDir ?? 'desc');
+
+    return this.http.get<ApiResponse<PageResponse<BranchStatisticResponseDto>>>(
+      `${this.baseUrl}/admin/branches/statistics`,
       { params }
     );
   }

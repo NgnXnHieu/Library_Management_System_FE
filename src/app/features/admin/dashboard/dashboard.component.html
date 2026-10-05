@@ -1,81 +1,369 @@
 <div class="dashboard-page">
-  <!-- 1. TIÊU ĐỀ BÀN LÀM VIỆC & LỜI CHÀO -->
+  <!-- 1. TIÊU ĐỀ BÁO CÁO & LỜI CHÀO -->
   <div class="page-header">
     <div>
       <div class="role-tag">🏛️ QUẢN TRỊ VIÊN TOÀN QUỐC</div>
-      <h1 class="page-title">Bảng Điều Khiển Chuỗi Thư Viện</h1>
+      <h1 class="page-title">Báo Cáo Tổng Hợp Chi Nhánh</h1>
       <p class="page-subtitle">
         Xin chào <strong>{{ authService.currentUser()?.fullName }}</strong>! 
-        Báo cáo hợp nhất số liệu vận hành của 5 chi nhánh trên toàn quốc.
+        Báo cáo tập trung tình hình tồn kho sách, lưu thông, lượt mượn và doanh thu từng chi nhánh.
       </p>
     </div>
 
     <div class="header-actions">
+      <button class="btn btn-secondary" (click)="loadStatistics()" [disabled]="isLoading()">
+        <span>🔄</span> Làm Mới
+      </button>
       <a routerLink="/admin/branches" class="btn btn-primary">
-        <span>➕</span> Thêm Chi Nhánh Mới
+        <span>🏛️</span> Quản Lý Chi Nhánh
       </a>
-      <a routerLink="/admin/reports" class="btn btn-secondary">
-        <span>📊</span> Báo Cáo Toàn Quốc
+      <a routerLink="/admin/inventory" class="btn btn-secondary">
+        <span>📚</span> Kho Toàn Quốc
       </a>
     </div>
   </div>
 
-  <!-- 2. CÁC THẺ CHỈ SỐ TOÀN CẦU -->
-  <div class="stats-grid">
-    @for (stat of stats; track stat.title) {
-      <div class="stat-card {{ stat.colorClass }}">
-        <div class="stat-icon-wrapper">
-          <span class="stat-icon">{{ stat.icon }}</span>
+  <!-- 2. THANH LỌC MỐC THỜI GIAN (HÔM NAY / TUẦN NÀY / THÁNG NÀY / TÙY CHỌN) -->
+  <div class="time-filter-card">
+    <div class="time-filter-top">
+      <div class="time-title-wrapper">
+        <span class="time-icon">⏳</span>
+        <span class="time-filter-title">Kỳ Báo Cáo Thống Kê:</span>
+        <span class="time-badge">{{ currentTimeRangeDescription }}</span>
+      </div>
+
+      <div class="time-presets-bar">
+        <button 
+          type="button" 
+          class="preset-btn" 
+          [class.active]="timePreset === 'today'" 
+          (click)="onTimePresetChange('today')"
+        >
+          📅 Hôm Nay
+        </button>
+        <button 
+          type="button" 
+          class="preset-btn" 
+          [class.active]="timePreset === 'week'" 
+          (click)="onTimePresetChange('week')"
+        >
+          📆 Tuần Này
+        </button>
+        <button 
+          type="button" 
+          class="preset-btn" 
+          [class.active]="timePreset === 'month'" 
+          (click)="onTimePresetChange('month')"
+        >
+          📊 Tháng Này
+        </button>
+        <button 
+          type="button" 
+          class="preset-btn" 
+          [class.active]="timePreset === 'custom'" 
+          (click)="onTimePresetChange('custom')"
+        >
+          ⚙️ Tùy Chọn
+        </button>
+      </div>
+    </div>
+
+    <!-- Dòng chọn ngày tùy biến nếu chọn 'custom' -->
+    @if (timePreset === 'custom') {
+      <div class="custom-date-container">
+        <div class="date-field">
+          <label>Từ ngày:</label>
+          <input type="date" class="form-control" [(ngModel)]="customStartDate" />
         </div>
-        <div class="stat-body">
-          <span class="stat-title">{{ stat.title }}</span>
-          <h2 class="stat-value">{{ stat.value }}</h2>
-          <span class="stat-change">{{ stat.change }}</span>
+        <div class="date-field">
+          <label>Đến ngày:</label>
+          <input type="date" class="form-control" [(ngModel)]="customEndDate" />
         </div>
+        <button type="button" class="btn btn-primary" (click)="onApplyCustomTimeFilter()" [disabled]="isLoading()">
+          <span>✓</span> Áp Dụng
+        </button>
       </div>
     }
   </div>
 
-  <!-- 3. BẢNG THEO DÕI HOẠT ĐỘNG 5 CHI NHÁNH TOÀN QUỐC -->
-  <div class="card">
-    <div class="card-header-flex">
-      <h3>🏛️ Tình Hình Hoạt Động & Lưu Thông Sách Của 5 Chi Nhánh</h3>
-      <span class="badge badge-success">5/5 Chi Nhánh Trực Tuyến</span>
+  <!-- 3. THẺ CHỈ SỐ VĨ MÔ TOÀN CHUỖI (KPI CARDS) -->
+  <div class="stats-grid">
+    <div class="stat-card purple">
+      <div class="stat-icon-wrapper">
+        <span class="stat-icon">🏛️</span>
+      </div>
+      <div class="stat-body">
+        <span class="stat-title">Chi Nhánh Hoạt Động</span>
+        <h2 class="stat-value">{{ kpiOpenBranches }} / {{ kpiTotalBranches }}</h2>
+        <span class="stat-change">Đang mở cửa phục vụ</span>
+      </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Tên Chi Nhánh</th>
-            <th>Giám Đốc Chi Nhánh</th>
-            <th>Tổng Đầu Sách Tại Kho</th>
-            <th>Lượng Sách Đang Mượn</th>
-            <th>Trạng Thái Vận Hành</th>
-            <th>Thao Tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (b of branchPerformance; track b.name) {
-            <tr>
-              <td><strong>{{ b.name }}</strong></td>
-              <td>{{ b.manager }}</td>
-              <td>{{ b.totalBooks | number }} cuốn</td>
-              <td>
-                <span class="badge badge-info">{{ b.activeLoans }} lượt</span>
-              </td>
-              <td>
-                <span class="badge" [class.badge-success]="b.status === 'BÌNH THƯỜNG'" [class.badge-warning]="b.status !== 'BÌNH THƯỜNG'">
-                  {{ b.status }}
-                </span>
-              </td>
-              <td>
-                <a routerLink="/admin/inventory" class="btn btn-sm btn-secondary">Xem kho chi nhánh</a>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <div class="stat-card green">
+      <div class="stat-icon-wrapper">
+        <span class="stat-icon">📚</span>
+      </div>
+      <div class="stat-body">
+        <span class="stat-title">Tổng Sách Trong Kho</span>
+        <h2 class="stat-value">{{ kpiTotalBooks | number }}</h2>
+        <span class="stat-change text-success">Khả dụng: {{ kpiTotalAvailable | number }} cuốn</span>
+      </div>
     </div>
+
+    <div class="stat-card blue">
+      <div class="stat-icon-wrapper">
+        <span class="stat-icon">📈</span>
+      </div>
+      <div class="stat-body">
+        <span class="stat-title">Lượng Sách Đang Mượn</span>
+        <h2 class="stat-value">{{ kpiTotalBorrowed | number }}</h2>
+        <span class="stat-change text-primary">Kỳ này: {{ kpiTotalBorrowSlips | number }} lượt mượn</span>
+      </div>
+    </div>
+
+    <div class="stat-card amber">
+      <div class="stat-icon-wrapper">
+        <span class="stat-icon">💰</span>
+      </div>
+      <div class="stat-body">
+        <span class="stat-title">Doanh Thu Trong Kỳ</span>
+        <h2 class="stat-value">{{ kpiTotalRevenue | currency:'VND':'symbol':'1.0-0' }}</h2>
+        <span class="stat-change text-warning">Tính theo mốc lọc thời gian</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. THANH TÌM KIẾM & BỘ LỌC CHI NHÁNH -->
+  <div class="filter-card">
+    <form (ngSubmit)="onSearch()" class="filter-form">
+      <div class="filter-group search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Tìm kiếm theo mã hoặc tên chi nhánh..."
+          [(ngModel)]="searchKeyword"
+          name="searchKeyword"
+        />
+      </div>
+
+      <div class="filter-group">
+        <select 
+          class="form-select" 
+          [ngModel]="selectedStatus" 
+          (ngModelChange)="onStatusChange($event)"
+          name="selectedStatus"
+        >
+          <option value="">-- Tất cả trạng thái --</option>
+          <option value="OPEN">Đang mở cửa (OPEN)</option>
+          <option value="CLOSED">Đóng cửa (CLOSED)</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
+          <span>🔍</span> Tìm Kiếm
+        </button>
+        <button type="button" class="btn btn-outline" (click)="onResetFilter()" [disabled]="isLoading()">
+          <span>🔄</span> Đặt Lại
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 5. BẢNG DỮ LIỆU THỐNG KÊ CHI TIẾT TỪNG CHI NHÁNH -->
+  <div class="card table-card">
+    <div class="card-header-flex">
+      <div>
+        <h3 class="card-title">📊 Bảng Số Liệu Vận Hành Chi Nhánh</h3>
+        <p class="card-subtitle">
+          Số lượt mượn và doanh thu được tính theo kỳ: <strong>{{ currentTimeRangeDescription }}</strong>
+        </p>
+      </div>
+      <div class="card-header-meta">
+        <span class="badge badge-info">Tổng số: {{ totalElements }} chi nhánh</span>
+      </div>
+    </div>
+
+    <!-- Thông báo lỗi nếu có -->
+    @if (errorMessage()) {
+      <div class="alert alert-danger">
+        <span>⚠️</span> {{ errorMessage() }}
+      </div>
+    }
+
+    <!-- Loading spinner -->
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Đang tải dữ liệu thống kê chi nhánh...</p>
+      </div>
+    } @else {
+      <!-- Bảng dữ liệu chính -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 80px;">Hình Ảnh</th>
+              <th style="width: 120px;">Mã CN</th>
+              <th>Tên Chi Nhánh</th>
+              <th style="width: 140px;">Trạng Thái</th>
+              <th class="text-end">Tổng Sách Kho</th>
+              <th class="text-end">Sách Khả Dụng</th>
+              <th class="text-end">Sách Đang Mượn</th>
+              <th class="text-end">Lượt Mượn Trong Kỳ</th>
+              <th class="text-end">Doanh Thu Trong Kỳ</th>
+              <th class="text-center" style="width: 140px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of branchStatistics(); track item.id) {
+              <tr>
+                <!-- Ảnh chi nhánh -->
+                <td class="text-center">
+                  <div class="branch-thumb-box">
+                    @if (item.imageUrl) {
+                      <img 
+                        [src]="getImageUrl(item.imageUrl)" 
+                        [alt]="item.name" 
+                        class="branch-thumb-img"
+                        (error)="$any($event.target).style.display = 'none'; fallbackRef.style.display = 'flex'"
+                        loading="lazy"
+                      />
+                    }
+                    <div #fallbackRef class="branch-thumb-fallback" [style.display]="item.imageUrl ? 'none' : 'flex'">
+                      🏛️
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Mã chi nhánh -->
+                <td>
+                  <span class="code-badge">{{ item.code }}</span>
+                </td>
+
+                <!-- Tên chi nhánh -->
+                <td>
+                  <strong class="branch-name">{{ item.name }}</strong>
+                </td>
+
+                <!-- Trạng thái -->
+                <td>
+                  @if (item.status === 'OPEN') {
+                    <span class="badge badge-success">
+                      <span class="dot-status dot-online"></span> Đang mở cửa
+                    </span>
+                  } @else {
+                    <span class="badge badge-danger">
+                      <span class="dot-status dot-offline"></span> Đóng cửa
+                    </span>
+                  }
+                </td>
+
+                <!-- Tổng sách trong kho -->
+                <td class="text-end">
+                  <span class="metric-value">{{ item.totalBooksInStock | number }}</span>
+                  <span class="metric-unit"> cuốn</span>
+                </td>
+
+                <!-- Sách khả dụng (còn) -->
+                <td class="text-end">
+                  <span class="metric-value text-success font-semibold">{{ item.totalAvailableBooks | number }}</span>
+                  <span class="metric-unit"> cuốn</span>
+                </td>
+
+                <!-- Sách đang mượn -->
+                <td class="text-end">
+                  <span class="badge badge-primary font-medium">
+                    {{ item.totalBorrowedBooks | number }} cuốn
+                  </span>
+                </td>
+
+                <!-- Tổng lượt mượn trong kỳ -->
+                <td class="text-end">
+                  <span class="metric-value">{{ item.totalBorrowSlips | number }}</span>
+                  <span class="metric-unit"> lượt</span>
+                </td>
+
+                <!-- Tổng doanh thu trong kỳ -->
+                <td class="text-end">
+                  <strong class="revenue-value">{{ item.totalRevenue | currency:'VND':'symbol':'1.0-0' }}</strong>
+                </td>
+
+                <!-- Thao tác liên kết -->
+                <td class="text-center">
+                  <div class="table-actions">
+                    <a routerLink="/admin/branches" class="btn btn-sm btn-outline" title="Chỉnh sửa chi nhánh">
+                      ⚙️ Quản lý
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="text-center py-5 empty-cell">
+                  <div class="empty-state">
+                    <span class="empty-icon">📂</span>
+                    <h4>Không tìm thấy chi nhánh nào</h4>
+                    <p>Hãy thử thay đổi mốc thời gian hoặc điều kiện tìm kiếm.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 6. PHÂN TRANG -->
+      @if (totalPages > 1) {
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            Hiển thị <strong>{{ page * size + 1 }}</strong> - 
+            <strong>{{ mathMin((page + 1) * size, totalElements) }}</strong> 
+            trên tổng <strong>{{ totalElements }}</strong> chi nhánh
+          </div>
+
+          <div class="pagination-controls">
+            <button 
+              class="page-btn" 
+              [disabled]="page === 0" 
+              (click)="goToPage(page - 1)"
+              title="Trang trước"
+            >
+              ◀
+            </button>
+
+            @for (p of getPageNumbers(); track p) {
+              <button 
+                class="page-btn" 
+                [class.active]="p === page" 
+                (click)="goToPage(p)"
+              >
+                {{ p + 1 }}
+              </button>
+            }
+
+            <button 
+              class="page-btn" 
+              [disabled]="page >= totalPages - 1" 
+              (click)="goToPage(page + 1)"
+              title="Trang sau"
+            >
+              ▶
+            </button>
+          </div>
+
+          <div class="page-size-selector">
+            <span>Dòng / trang:</span>
+            <select [value]="size" (change)="onPageSizeChange($event)" class="form-select-sm">
+              <option [value]="5">5</option>
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+            </select>
+          </div>
+        </div>
+      }
+    }
   </div>
 </div>

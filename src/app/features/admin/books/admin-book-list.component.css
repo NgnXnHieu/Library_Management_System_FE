@@ -316,6 +316,11 @@
   color: #d97706;
 }
 
+.fine-price-text {
+  font-weight: 600;
+  color: #dc2626;
+}
+
 /* Trạng thái */
 .status-badge {
   display: inline-block;
@@ -806,5 +811,88 @@
   }
   .col-span-2 {
     grid-column: span 1;
+  }
+}
+
+/* ========================================================================= */
+/* 7. ALERT BANNER & ERROR NOTIFICATIONS                                     */
+/* ========================================================================= */
+.alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  animation: slideDown 0.25s ease-out;
+}
+
+.alert-danger {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.modal-alert {
+  margin-bottom: 6px;
+  border-radius: 10px;
+}
+
+.alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+
+.alert-icon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.alert-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.alert-title {
+  font-weight: 700;
+  color: #7f1d1d;
+}
+
+.alert-message {
+  color: #991b1b;
+  word-break: break-word;
+}
+
+.alert-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #991b1b;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 4px;
+  transition: opacity 0.15s ease;
+  border-radius: 4px;
+}
+
+.alert-close-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

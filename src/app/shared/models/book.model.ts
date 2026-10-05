@@ -62,6 +62,7 @@ export interface BookCreateRequest {
   coverImageKey?: string;
   price?: number;
   rentalPrice?: number;
+  fineAmount?: number;
   status?: DisplayStatus;
 }
 
@@ -79,5 +80,44 @@ export interface BookUpdateRequest {
   coverImageKey?: string;
   price?: number;
   rentalPrice?: number;
+  fineAmount?: number;
   status?: DisplayStatus;
 }
+
+/**
+ * Interface thông tin tồn kho sách tại chi nhánh dành cho khách hàng
+ */
+export interface BookBranchInventoryDto {
+  inventoryId: number;
+  branchId: number;
+  branchName: string;
+  branchAddress?: string;
+  branchPhone?: string;
+  totalQuantity: number;
+  availableQuantity: number;
+  shelfLocation?: string;
+  status: string;
+}
+
+/**
+ * Interface chi tiết đầu sách dành cho khách hàng (kèm danh sách chi nhánh có sách)
+ */
+export interface BookDetailCustomerResponseDto {
+  id: number;
+  isbn: string;
+  title: string;
+  author?: string;
+  publisher?: string;
+  publicationYear?: number;
+  description?: string;
+  coverImageKey?: string;
+  coverImageUrl?: string;
+  price?: number;
+  rentalPrice?: number;
+  fineAmount?: number;
+  status: string;
+  categoryId: number;
+  categoryName: string;
+  inventories: BookBranchInventoryDto[];
+}
+

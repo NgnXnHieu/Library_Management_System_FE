@@ -1,0 +1,358 @@
+<div class="borrow-slips-page-wrapper">
+  <div class="container">
+    
+    <!-- 1. HERO BANNER TIÊU ĐỀ TRANG -->
+    <header class="page-hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-icon">📋</span>
+          <span>QUẢN LÝ DỊCH VỤ ĐỘC GIẢ</span>
+        </div>
+        <h1 class="hero-title">Lịch Sử & Phiếu Mượn Sách Cá Nhân</h1>
+        <p class="hero-subtitle">
+          Theo dõi trạng thái mượn trả, hạn hoàn trả sách và danh sách chi tiết các ấn phẩm bạn đã đăng ký tại các chi nhánh thư viện.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a routerLink="/books" class="btn btn-primary btn-explore">
+          <span class="btn-icon">📚</span>
+          <span>Mượn Thêm Sách Mới</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- 2. THANH BỘ LỌC TÌM KIẾM & ĐIỀU KHIỂN (FILTER BAR) -->
+    <section class="filter-card">
+      <div class="filter-grid">
+        <!-- Tìm kiếm theo mã phiếu -->
+        <div class="filter-group filter-search">
+          <label class="filter-label">🔍 Mã phiếu mượn</label>
+          <div class="input-with-icon">
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Nhập mã phiếu (VD: BS-2026...)" 
+              [(ngModel)]="filter.borrowCode"
+              (keyup.enter)="onFilterChange()"
+            />
+            @if (filter.borrowCode) {
+              <button class="btn-clear-input" (click)="filter.borrowCode = ''; onFilterChange()" title="Xóa">✕</button>
+            }
+          </div>
+        </div>
+
+        <!-- Lọc theo trạng thái mượn -->
+        <div class="filter-group">
+          <label class="filter-label">📖 Trạng thái mượn</label>
+          <select class="form-control" [(ngModel)]="filter.status" (change)="onFilterChange()">
+            <option [ngValue]="undefined">Tất cả trạng thái</option>
+            <option value="BORROWED">Đang mượn</option>
+            <option value="RETURNED">Đã trả</option>
+            <option value="OVERDUE">Quá hạn</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+        </div>
+
+        <!-- Lọc theo trạng thái thanh toán -->
+        <div class="filter-group">
+          <label class="filter-label">💳 Trạng thái thanh toán</label>
+          <select class="form-control" [(ngModel)]="filter.paymentStatus" (change)="onFilterChange()">
+            <option [ngValue]="undefined">Tất cả thanh toán</option>
+            <option value="PAID">Đã thanh toán</option>
+            <option value="UNPAID">Chưa thanh toán</option>
+            <option value="REFUNDED">Đã hoàn tiền</option>
+          </select>
+        </div>
+
+        <!-- Sắp xếp theo -->
+        <div class="filter-group">
+          <label class="filter-label">⚡ Sắp xếp theo</label>
+          <select class="form-control" [(ngModel)]="filter.sortBy" (change)="onFilterChange()">
+            <option value="borrowedAt">Ngày mượn sách</option>
+            <option value="returnedAt">Ngày trả sách</option>
+            <option value="totalAmount">Tổng tiền thuê</option>
+          </select>
+        </div>
+
+        <!-- Hướng sắp xếp -->
+        <div class="filter-group">
+          <label class="filter-label">↕ Thứ tự</label>
+          <select class="form-control" [(ngModel)]="filter.sortDir" (change)="onFilterChange()">
+            <option value="desc">Mới nhất trước</option>
+            <option value="asc">Cũ nhất trước</option>
+          </select>
+        </div>
+
+        <!-- Nút tìm kiếm & Reset -->
+        <div class="filter-group filter-actions">
+          <label class="filter-label">&nbsp;</label>
+          <div class="actions-wrapper">
+            <button class="btn btn-primary" (click)="onFilterChange()" title="Áp dụng bộ lọc">
+              Tìm kiếm
+            </button>
+            <button class="btn btn-outline" (click)="onResetFilter()" title="Đặt lại bộ lọc">
+              Đặt lại
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. DANH SÁCH PHIẾU MƯỢN VÀ NỘI DUNG CHÍNH -->
+    <main class="slips-container">
+
+      <!-- Trạng thái Loading Skeletons -->
+      @if (isLoading) {
+        <div class="loading-skeletons">
+          <div class="skeleton-card" *ngFor="let i of [1, 2, 3]">
+            <div class="skeleton-header shimmer"></div>
+            <div class="skeleton-body shimmer"></div>
+            <div class="skeleton-table shimmer"></div>
+          </div>
+        </div>
+      }
+
+      <!-- Thông báo lỗi khi gọi API -->
+      @else if (errorMessage) {
+        <div class="error-alert">
+          <span class="error-icon">⚠️</span>
+          <div class="error-text">
+            <strong>Có lỗi xảy ra:</strong>
+            <p>{{ errorMessage }}</p>
+          </div>
+          <button class="btn btn-outline btn-sm" (click)="loadMyBorrowSlips()">Thử lại</button>
+        </div>
+      }
+
+      <!-- Trạng thái trống (Không có phiếu mượn nào) -->
+      @else if (borrowSlips.length === 0) {
+        <div class="empty-state-card">
+          <div class="empty-icon">📭</div>
+          <h2 class="empty-title">Không Tìm Thấy Phiếu Mượn Nào</h2>
+          <p class="empty-desc">
+            Bạn hiện chưa có phiếu mượn nào phù hợp với điều kiện tìm kiếm. Hãy khám phá kho sách phong phú và đăng ký mượn ngay hôm nay!
+          </p>
+          <div class="empty-actions">
+            <button class="btn btn-outline" (click)="onResetFilter()" *ngIf="filter.borrowCode || filter.status || filter.paymentStatus">
+              Xóa Bộ Lọc Tìm Kiếm
+            </button>
+            <a routerLink="/books" class="btn btn-primary">
+              Khám Phá Tủ Sách Thư Viện
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- Danh sách phiếu mượn đã tải thành công -->
+      @else {
+        <div class="slips-list">
+          @for (slip of borrowSlips; track slip.id) {
+            <article class="slip-card" [ngClass]="'status-' + (slip.status | lowercase)">
+              
+              <!-- PHẦN 1: HEADER THÔNG TIN CHUNG PHIẾU MƯỢN -->
+              <div class="slip-card-header">
+                <div class="slip-title-area">
+                  <span class="slip-icon">📄</span>
+                  <div class="slip-title-info">
+                    <div class="code-and-branch">
+                      <span class="slip-code">{{ slip.borrowCode }}</span>
+                      <span class="branch-tag">
+                        <span class="tag-icon">🏛️</span> {{ slip.branchName }}
+                      </span>
+                    </div>
+                    <span class="slip-created-date">
+                      Được tạo: {{ slip.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Các Badge Trạng Thái -->
+                <div class="slip-badges-area">
+                  <div class="status-cell">
+                    <span class="badge" [ngClass]="getStatusBadgeClass(slip)">
+                      {{ getStatusLabel(slip) }}
+                    </span>
+                    @if (isOverdue(slip)) {
+                      <small class="overdue-days-text">Quá {{ getOverdueDays(slip) }} ngày</small>
+                    }
+                  </div>
+                  <span class="badge" [ngClass]="getPaymentStatusBadgeClass(slip.paymentStatus)">
+                    {{ getPaymentStatusLabel(slip.paymentStatus) }}
+                  </span>
+                  <button 
+                    class="btn-toggle-items" 
+                    (click)="toggleItems(slip.id)"
+                    [title]="expandedSlips[slip.id] ? 'Thu gọn chi tiết sách' : 'Mở rộng chi tiết sách'"
+                  >
+                    <span>{{ expandedSlips[slip.id] ? 'Thu gọn' : 'Xem sách' }}</span>
+                    <span class="toggle-arrow" [class.rotated]="expandedSlips[slip.id]">▾</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- PHẦN 2: GRID THÔNG TIN CHI TIẾT CỦA BORROW SLIP -->
+              <div class="slip-meta-grid">
+                <div class="meta-item">
+                  <span class="meta-label">📅 Ngày mượn</span>
+                  <span class="meta-value">{{ slip.borrowedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+
+                <div class="meta-item" [class.overdue-alert]="isOverdue(slip)">
+                  <span class="meta-label">⏳ Hạn trả sách</span>
+                  <span class="meta-value font-bold">
+                    {{ slip.dueAt | date:'dd/MM/yyyy HH:mm' }}
+                    @if (isOverdue(slip)) {
+                      <span class="overdue-badge-pill"> (Quá {{ getOverdueDays(slip) }} ngày)</span>
+                    }
+                  </span>
+                </div>
+
+                <div class="meta-item">
+                  <span class="meta-label">🏁 Ngày trả thực tế</span>
+                  <span class="meta-value">
+                    {{ slip.returnedAt ? (slip.returnedAt | date:'dd/MM/yyyy HH:mm') : '— Chưa trả —' }}
+                  </span>
+                </div>
+
+                <div class="meta-item">
+                  <span class="meta-label">👤 Thủ thư xử lý</span>
+                  <span class="meta-value">
+                    {{ slip.staffName }}
+                    @if (slip.staffPhone) {
+                      <small class="staff-phone">({{ slip.staffPhone }})</small>
+                    }
+                  </span>
+                </div>
+
+                <div class="meta-item">
+                  <span class="meta-label">📚 Số lượng sách</span>
+                  <span class="meta-value font-bold">{{ slip.totalQuantity }} cuốn</span>
+                </div>
+
+                <div class="meta-item highlight-price">
+                  <span class="meta-label">💰 Tổng tiền thuê</span>
+                  <span class="meta-value price-text">{{ slip.totalAmount | number:'1.0-0' }} đ</span>
+                </div>
+              </div>
+
+              <!-- PHẦN 3: CHI TIẾT DANH SÁCH CÁC CUỐN SÁCH (BORROW ITEMS) Ở DƯỚI -->
+              @if (expandedSlips[slip.id]) {
+                <div class="slip-items-section">
+                  <div class="items-header">
+                    <span class="items-title">
+                      📚 Danh Sách Ấn Phẩm Trong Phiếu ({{ slip.items?.length || 0 }} cuốn)
+                    </span>
+                  </div>
+
+                  @if (slip.items && slip.items.length > 0) {
+                    <div class="items-table-wrapper">
+                      <table class="items-table">
+                        <thead>
+                          <tr>
+                            <th class="col-stt">STT</th>
+                            <th class="col-title">Tên Sách</th>
+                            <th class="col-isbn">Mã ISBN</th>
+                            <th class="col-price text-right">Đơn Giá Thuê</th>
+                            <th class="col-qty text-center">Số Lượng</th>
+                            <th class="col-total text-right">Thành Tiền</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of slip.items; track item.id; let idx = $index) {
+                            <tr class="item-row">
+                              <td class="col-stt text-center">{{ idx + 1 }}</td>
+                              <td class="col-title">
+                                <a 
+                                  [routerLink]="['/books', item.bookId]" 
+                                  class="book-link" 
+                                  title="Bấm để xem chi tiết sách"
+                                >
+                                  {{ item.bookTitle }}
+                                </a>
+                              </td>
+                              <td class="col-isbn">
+                                <span class="isbn-code">{{ item.isbn || 'Chưa cập nhật' }}</span>
+                              </td>
+                              <td class="col-price text-right">
+                                {{ item.rentalPrice | number:'1.0-0' }} đ
+                              </td>
+                              <td class="col-qty text-center">
+                                <span class="qty-badge">{{ item.quantity }}</span>
+                              </td>
+                              <td class="col-total text-right font-bold text-accent">
+                                {{ (item.rentalPrice * item.quantity) | number:'1.0-0' }} đ
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                        <tfoot>
+                          <tr class="summary-row">
+                            <td colspan="4" class="text-right font-bold">Tổng cộng:</td>
+                            <td class="text-center font-bold">{{ slip.totalQuantity }}</td>
+                            <td class="text-right font-bold text-accent total-sum">
+                              {{ slip.totalAmount | number:'1.0-0' }} đ
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  } @else {
+                    <div class="no-items-notice">
+                      <span>Phiếu mượn chưa có dữ liệu chi tiết sách.</span>
+                    </div>
+                  }
+                </div>
+              }
+
+            </article>
+          }
+        </div>
+
+        <!-- 4. THANH PHÂN TRANG HIỆN ĐẠI (PAGINATION) -->
+        <nav class="pagination-section">
+          <div class="pagination-info">
+            Hiển thị trang <strong>{{ (filter.page || 0) + 1 }}</strong> / <strong>{{ totalPages || 1 }}</strong> 
+            (Tổng cộng <strong>{{ totalElements }}</strong> phiếu mượn)
+          </div>
+
+          <div class="pagination-controls">
+            <!-- Nút Trước -->
+            <button 
+              class="pagination-btn" 
+              [disabled]="(filter.page || 0) === 0"
+              (click)="goToPage((filter.page || 0) - 1)"
+              title="Trang trước"
+            >
+              ◀ Trước
+            </button>
+
+            <!-- Các nút số trang -->
+            <div class="page-numbers">
+              @for (p of getPaginationPages(); track p) {
+                <button 
+                  class="page-num-btn" 
+                  [class.active]="p === (filter.page || 0)"
+                  (click)="goToPage(p)"
+                >
+                  {{ p + 1 }}
+                </button>
+              }
+            </div>
+
+            <!-- Nút Sau -->
+            <button 
+              class="pagination-btn" 
+              [disabled]="(filter.page || 0) >= totalPages - 1"
+              (click)="goToPage((filter.page || 0) + 1)"
+              title="Trang tiếp theo"
+            >
+              Sau ▶
+            </button>
+          </div>
+        </nav>
+      }
+
+    </main>
+
+  </div>
+</div>

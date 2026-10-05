@@ -24,15 +24,28 @@ export const routes: Routes = [
         title: 'Trang Chủ - Thư Viện Tri Thức'
       },
       {
+        path: 'books',
+        loadComponent: () => import('./features/customer/books/customer-book-list.component')
+          .then(m => m.CustomerBookListComponent),
+        title: 'Danh Sách Sách - Thư Viện Tri Thức'
+      },
+      {
+        path: 'books/:id',
+        loadComponent: () => import('./features/customer/books/book-detail/customer-book-detail.component')
+          .then(m => m.CustomerBookDetailComponent),
+        title: 'Chi Tiết Sách - Thư Viện Tri Thức'
+      },
+      {
         path: 'categories',
-        loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
-        title: 'Danh Mục Thể Loại Sách'
+        redirectTo: 'books',
+        pathMatch: 'full'
       },
       {
         path: 'borrow-slips',
-        loadComponent: () => import('./features/borrow-slips/borrow-slip-list/borrow-slip-list.component')
-          .then(m => m.BorrowSlipListComponent),
-        title: 'Tra Cứu Phiếu Mượn'
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/customer/borrow-slips/customer-borrow-slip-list.component')
+          .then(m => m.CustomerBorrowSlipListComponent),
+        title: 'Phiếu Mượn Của Tôi - Thư Viện Tri Thức'
       }
     ]
   },
@@ -63,16 +76,28 @@ export const routes: Routes = [
         title: 'Xử Lý Mượn Trả Sách Tại Quầy'
       },
       {
+        path: 'create-slip',
+        loadComponent: () => import('./features/staff/create-slip/staff-create-slip.component')
+          .then(m => m.StaffCreateSlipComponent),
+        title: 'Quầy Lập Phiếu Mượn Sách'
+      },
+      {
         path: 'inventory',
         loadComponent: () => import('./features/staff/inventory/staff-inventory.component')
           .then(m => m.StaffInventoryComponent),
-        title: 'Kho Sách Chi Nhánh & Lập Phiếu Mượn'
+        title: 'Tra Cứu Kho Sách Chi Nhánh'
       },
       {
         path: 'patrons',
-        loadComponent: () => import('./features/borrow-slips/borrow-slip-list/borrow-slip-list.component')
-          .then(m => m.BorrowSlipListComponent),
-        title: 'Hồ Sơ Độc Giả Chi Nhánh'
+        loadComponent: () => import('./features/customers/customer-list/customer-list.component')
+          .then(m => m.CustomerListComponent),
+        title: 'Hồ Sơ Khách Hàng'
+      },
+      {
+        path: 'patrons/:id/borrow-slips',
+        loadComponent: () => import('./features/customers/customer-borrow-slips/customer-borrow-slips.component')
+          .then(m => m.CustomerBorrowSlipsComponent),
+        title: 'Lịch Sử Phiếu Mượn Khách Hàng'
       }
     ]
   },
@@ -135,13 +160,8 @@ export const routes: Routes = [
       roles: ['ROLE_ADMIN']
     },
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      {
-        path: 'dashboard',
-        loadComponent: () => import('./features/admin/dashboard/dashboard.component')
-          .then(m => m.AdminDashboardComponent),
-        title: 'Bảng Điều Khiển Chuỗi - Super Admin'
-      },
+      { path: '', redirectTo: 'reports', pathMatch: 'full' },
+      { path: 'dashboard', redirectTo: 'reports', pathMatch: 'full' },
       {
         path: 'inventory',
         loadComponent: () => import('./features/admin/inventory/admin-inventory.component')
@@ -179,6 +199,18 @@ export const routes: Routes = [
         title: 'Quản Lý Tài Khoản & Phân Quyền'
       },
       {
+        path: 'customers',
+        loadComponent: () => import('./features/customers/customer-list/customer-list.component')
+          .then(m => m.CustomerListComponent),
+        title: 'Quản Lý Khách Hàng'
+      },
+      {
+        path: 'customers/:id/borrow-slips',
+        loadComponent: () => import('./features/customers/customer-borrow-slips/customer-borrow-slips.component')
+          .then(m => m.CustomerBorrowSlipsComponent),
+        title: 'Lịch Sử Phiếu Mượn Khách Hàng'
+      },
+      {
         path: 'reports',
         loadComponent: () => import('./features/admin/dashboard/dashboard.component')
           .then(m => m.AdminDashboardComponent),
@@ -188,12 +220,17 @@ export const routes: Routes = [
   },
 
   // =========================================================================
-  // 5. MÀN HÌNH ĐĂNG NHẬP
+  // 5. MÀN HÌNH ĐĂNG NHẬP & ĐĂNG KÝ (AUTH)
   // =========================================================================
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
     title: 'Đăng Nhập Hệ Thống'
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent),
+    title: 'Đăng Ký Tài Khoản'
   },
 
   // =========================================================================

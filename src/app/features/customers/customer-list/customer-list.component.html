@@ -1,0 +1,415 @@
+<div class="customer-list-container">
+
+  <!-- ========================================================================= -->
+  <!-- 1. HEADER TRANG                                                           -->
+  <!-- ========================================================================= -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon-box">👥</div>
+      <div>
+        <h1 class="page-title">{{ isAdminContext ? 'Quản Lý Khách Hàng' : 'Hồ Sơ Khách Hàng' }}</h1>
+        <p class="page-subtitle">
+          {{ isAdminContext 
+            ? 'Danh sách tài khoản khách hàng toàn hệ thống, cập nhật thông tin và theo dõi lưu thông phiếu mượn' 
+            : 'Tra cứu thông tin hồ sơ độc giả và lịch sử phiếu mượn tại chi nhánh phục vụ' }}
+        </p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="loadCustomers()" [disabled]="isLoading">
+        <span class="btn-icon" [class.spin]="isLoading">🔄</span>
+        Làm Mới
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. THẺ THỐNG KÊ NHANH (KPI CARDS)                                         -->
+  <!-- ========================================================================= -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-box blue">👥</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Tổng Số Khách Hàng</span>
+        <strong class="kpi-value">{{ totalElements }}</strong>
+        <span class="kpi-hint">Độc giả đăng ký trong hệ thống</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-box green">🟢</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Đang Hoạt Động (Trang này)</span>
+        <strong class="kpi-value text-success">{{ activeCountOnPage }}</strong>
+        <span class="kpi-hint">Tài khoản ở trạng thái ACTIVE</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-box red">🔒</div>
+      <div class="kpi-content">
+        <span class="kpi-label">Tạm Khóa / Ngừng (Trang này)</span>
+        <strong class="kpi-value text-danger">{{ lockedCountOnPage }}</strong>
+        <span class="kpi-hint">Tài khoản LOCKED hoặc INACTIVE</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BỘ LỌC TÌM KIẾM ĐỘC GIẢ                                                -->
+  <!-- ========================================================================= -->
+  <section class="card filter-card">
+    <div class="filter-header">
+      <div class="filter-title">
+        <span class="icon">🔍</span> Bộ Lọc & Tìm Kiếm Độc Giả
+      </div>
+      <button class="btn-text-reset" (click)="onResetFilters()">
+        ✕ Xóa bộ lọc
+      </button>
+    </div>
+
+    <div class="filter-grid">
+      <!-- Tên đăng nhập -->
+      <div class="filter-group">
+        <label class="form-label">Tên đăng nhập (Username)</label>
+        <div class="input-with-icon">
+          <span class="input-icon">👤</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nhập username..." 
+            [(ngModel)]="filterParams.username"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Họ và tên -->
+      <div class="filter-group">
+        <label class="form-label">Họ và tên</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📝</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nhập họ và tên..." 
+            [(ngModel)]="filterParams.fullName"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Số điện thoại -->
+      <div class="filter-group">
+        <label class="form-label">Số điện thoại</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📞</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nhập SĐT..." 
+            [(ngModel)]="filterParams.phone"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="filter-group">
+        <label class="form-label">Email</label>
+        <div class="input-with-icon">
+          <span class="input-icon">✉️</span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nhập email..." 
+            [(ngModel)]="filterParams.email"
+            (keyup.enter)="onSearch()" />
+        </div>
+      </div>
+
+      <!-- Trạng thái -->
+      <div class="filter-group">
+        <label class="form-label">Trạng thái tài khoản</label>
+        <select class="form-control" [(ngModel)]="filterParams.status" (change)="onSearch()">
+          <option value="">-- Tất cả trạng thái --</option>
+          <option value="ACTIVE">Hoạt động (ACTIVE)</option>
+          <option value="INACTIVE">Chưa kích hoạt (INACTIVE)</option>
+          <option value="LOCKED">Bị khóa (LOCKED)</option>
+        </select>
+      </div>
+
+      <!-- Sắp xếp -->
+      <div class="filter-group">
+        <label class="form-label">Sắp xếp theo</label>
+        <div class="sort-controls">
+          <select class="form-control" [(ngModel)]="filterParams.sortBy" (change)="onSearch()">
+            <option value="createdAt">Ngày đăng ký</option>
+            <option value="fullName">Họ và tên (A-Z)</option>
+            <option value="username">Tên đăng nhập</option>
+            <option value="phone">Số điện thoại</option>
+            <option value="email">Email</option>
+          </select>
+          <button 
+            type="button" 
+            class="btn-sort-dir" 
+            [title]="filterParams.sortDir === 'desc' ? 'Giảm dần' : 'Tăng dần'"
+            (click)="filterParams.sortDir = (filterParams.sortDir === 'desc' ? 'asc' : 'desc'); onSearch()">
+            {{ filterParams.sortDir === 'desc' ? '⬇ Giảm' : '⬆ Tăng' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-footer">
+      <div class="filter-summary">
+        Tìm thấy <strong>{{ totalElements }}</strong> khách hàng phù hợp
+      </div>
+      <button class="btn btn-primary" (click)="onSearch()">
+        <span class="btn-icon">🔍</span> Tìm Kiếm Khách Hàng
+      </button>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 4. BẢNG DANH SÁCH KHÁCH HÀNG                                              -->
+  <!-- ========================================================================= -->
+  <section class="card table-card">
+    @if (isLoading) {
+      <div class="state-container">
+        <div class="loading-spinner"></div>
+        <p class="state-text">Đang tải danh sách khách hàng...</p>
+      </div>
+    } @else if (customers.length === 0) {
+      <div class="state-container empty-state">
+        <div class="state-icon">📭</div>
+        <h3 class="state-title">Không tìm thấy khách hàng nào</h3>
+        <p class="state-text">Thử thay đổi từ khóa tìm kiếm hoặc bấm Xóa bộ lọc để xem toàn bộ danh sách.</p>
+        <button class="btn btn-secondary mt-3" (click)="onResetFilters()">Xem Toàn Bộ Khách Hàng</button>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-user">Thông Tin Độc Giả</th>
+              <th class="col-contact">Liên Hệ</th>
+              <th class="col-dob text-center">Ngày Sinh</th>
+              <th class="col-status text-center">Trạng Thái</th>
+              <th class="col-joined text-center">Ngày Đăng Ký</th>
+              <th class="col-action text-center">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cust of customers; track cust.userId) {
+              <tr class="table-row">
+                <!-- Cột độc giả: Avatar, Họ tên, Username -->
+                <td class="col-user">
+                  <div class="user-profile-cell">
+                    <div class="user-avatar-box">
+                      @if (cust.imageUrl) {
+                        <img [src]="getImageUrl(cust.imageUrl)" (error)="onImageError($event)" [alt]="cust.fullName" class="user-avatar" />
+                        <div class="avatar-fallback" style="display: none;">👤</div>
+                      } @else {
+                        <div class="avatar-fallback">👤</div>
+                      }
+                    </div>
+                    <div class="user-names">
+                      <strong class="user-fullname">{{ cust.fullName }}</strong>
+                      <span class="user-username">&#64;{{ cust.username }}</span>
+                      @if (cust.branchName) {
+                        <span class="user-branch-badge">🏢 {{ cust.branchName }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Cột liên hệ: SĐT, Email, Địa chỉ -->
+                <td class="col-contact">
+                  <div class="contact-stack">
+                    <div class="contact-item">
+                      <span class="contact-icon">📞</span>
+                      <span class="contact-val">{{ cust.phone || 'Chưa cập nhật' }}</span>
+                    </div>
+                    <div class="contact-item">
+                      <span class="contact-icon">✉️</span>
+                      <span class="contact-val">{{ cust.email }}</span>
+                    </div>
+                    @if (cust.address) {
+                      <div class="contact-item address-item" [title]="cust.address">
+                        <span class="contact-icon">📍</span>
+                        <span class="contact-val">{{ cust.address }}</span>
+                      </div>
+                    }
+                  </div>
+                </td>
+
+                <!-- Ngày sinh -->
+                <td class="col-dob text-center">
+                  {{ cust.dateOfBirth ? (cust.dateOfBirth | date:'dd/MM/yyyy') : '---' }}
+                </td>
+
+                <!-- Trạng thái -->
+                <td class="col-status text-center">
+                  @switch (cust.status) {
+                    @case ('ACTIVE') {
+                      <span class="status-badge status-active">🟢 Hoạt động</span>
+                    }
+                    @case ('LOCKED') {
+                      <span class="status-badge status-locked">🔒 Bị khóa</span>
+                    }
+                    @case ('INACTIVE') {
+                      <span class="status-badge status-inactive">⚪ Chưa kích hoạt</span>
+                    }
+                    @default {
+                      <span class="status-badge">{{ cust.status }}</span>
+                    }
+                  }
+                </td>
+
+                <!-- Ngày đăng ký -->
+                <td class="col-joined text-center">
+                  <span class="date-text">{{ cust.createdAt | date:'dd/MM/yyyy' }}</span>
+                  <small class="time-text">{{ cust.createdAt | date:'HH:mm' }}</small>
+                </td>
+
+                <!-- Nút thao tác: Xem phiếu mượn & Chỉnh sửa (Admin) -->
+                <td class="col-action text-center">
+                  <div class="action-buttons-group">
+                    <!-- Nút Xem phiếu mượn (cả Admin và Staff đều có) -->
+                    <button 
+                      type="button" 
+                      class="btn-action btn-view-slips" 
+                      (click)="viewBorrowSlips(cust)"
+                      title="Xem danh sách các phiếu mượn của độc giả này">
+                      📋 Xem phiếu mượn
+                    </button>
+
+                    <!-- Nút Chỉnh sửa (chỉ Admin có) -->
+                    @if (isAdminContext) {
+                      <button 
+                        type="button" 
+                        class="btn-action btn-edit-user" 
+                        (click)="openEditModal(cust)"
+                        title="Chỉnh sửa thông tin khách hàng">
+                        ✏️ Sửa
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          [totalElements]="totalElements"
+          [pageSize]="pageSize"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)">
+        </app-pagination>
+      </div>
+    }
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODAL CHỈNH SỬA THÔNG TIN KHÁCH HÀNG (DÀNH RIÊNG CHO ADMIN)            -->
+  <!-- ========================================================================= -->
+  @if (showEditModal) {
+    <div class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+        
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-icon">✏️</span>
+            <div>
+              <h2 class="modal-title">Chỉnh Sửa Thông Tin Khách Hàng</h2>
+              <p class="modal-subtitle">Cập nhật hồ sơ tài khoản khách hàng</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" (click)="closeEditModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-grid">
+            <!-- Họ và tên -->
+            <div class="form-group col-span-2">
+              <label class="modal-label font-bold">Họ và tên <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Nhập họ và tên đầy đủ..." 
+                [(ngModel)]="editFormData.fullName" />
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label class="modal-label font-bold">Email</label>
+              <input 
+                type="email" 
+                class="form-control" 
+                placeholder="Nhập email..." 
+                [(ngModel)]="editFormData.email" />
+            </div>
+
+            <!-- Số điện thoại -->
+            <div class="form-group">
+              <label class="modal-label font-bold">Số điện thoại</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Nhập SĐT..." 
+                [(ngModel)]="editFormData.phone" />
+            </div>
+
+            <!-- Ngày sinh -->
+            <div class="form-group">
+              <label class="modal-label">Ngày sinh</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                [(ngModel)]="editFormData.dateOfBirth" />
+            </div>
+
+            <!-- Trạng thái tài khoản -->
+            <div class="form-group">
+              <label class="modal-label font-bold">Trạng thái tài khoản</label>
+              <select class="form-control" [(ngModel)]="editFormData.status">
+                <option value="ACTIVE">🟢 Hoạt động (ACTIVE)</option>
+                <option value="INACTIVE">⚪ Chưa kích hoạt (INACTIVE)</option>
+                <option value="LOCKED">🔒 Tạm khóa (LOCKED)</option>
+              </select>
+            </div>
+
+            <!-- Địa chỉ -->
+            <div class="form-group col-span-2">
+              <label class="modal-label">Địa chỉ</label>
+              <textarea 
+                class="form-control" 
+                rows="2" 
+                placeholder="Nhập địa chỉ cư trú..." 
+                [(ngModel)]="editFormData.address"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()" [disabled]="isSubmittingEdit">
+            Hủy Bỏ
+          </button>
+          <button class="btn btn-primary" (click)="submitUpdateCustomer()" [disabled]="isSubmittingEdit">
+            @if (isSubmittingEdit) {
+              <span class="spinner-sm"></span> Đang lưu...
+            } @else {
+              <span class="btn-icon">💾</span> Lưu Thay Đổi
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,196 @@
+<div class="register-wrapper">
+  <div class="card register-card">
+    <div class="register-header">
+      <div class="register-icon">📚</div>
+      <h2 class="register-title">Đăng Ký Tài Khoản</h2>
+      <p class="register-subtitle">Trở thành thành viên của Thư Viện Tri Thức ngay hôm nay</p>
+    </div>
+
+    <!-- Thông báo lỗi tổng quát khi Backend trả về lỗi -->
+    @if (errorMessage) {
+      <div class="alert alert-danger">
+        ⚠️ {{ errorMessage }}
+      </div>
+    }
+
+    <!-- FORM REACTIVE ĐĂNG KÝ -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      
+      <!-- 1. Họ và tên -->
+      <div class="form-group">
+        <label for="fullName" class="form-label">Họ và tên <span class="required">*</span></label>
+        <input 
+          id="fullName"
+          type="text" 
+          class="form-control" 
+          [class.is-invalid]="f['fullName'].touched && f['fullName'].invalid"
+          formControlName="fullName" 
+          placeholder="Nhập họ và tên đầy đủ (ví dụ: Nguyễn Văn A)..."
+        />
+        @if (f['fullName'].touched && f['fullName'].invalid) {
+          <div class="invalid-feedback">
+            @if (f['fullName'].errors?.['required']) {
+              <span>Tên người dùng không được để trống!</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 2. Tên đăng nhập -->
+      <div class="form-group">
+        <label for="username" class="form-label">Tên đăng nhập <span class="required">*</span></label>
+        <input 
+          id="username"
+          type="text" 
+          class="form-control" 
+          [class.is-invalid]="f['username'].touched && f['username'].invalid"
+          formControlName="username" 
+          placeholder="Tối thiểu 10 ký tự (ví dụ: nguyenvana123)..."
+        />
+        @if (f['username'].touched && f['username'].invalid) {
+          <div class="invalid-feedback">
+            @if (f['username'].errors?.['required']) {
+              <span>Tài khoản không được để trống!</span>
+            }
+            @if (f['username'].errors?.['minlength']) {
+              <span>Tài khoản phải từ 10 ký tự trở lên! (Hiện có {{ f['username'].value?.length || 0 }} ký tự)</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 3. Hàng đôi: Email & Số điện thoại -->
+      <div class="form-row">
+        <!-- Email -->
+        <div class="form-group col">
+          <label for="email" class="form-label">Địa chỉ Email <span class="required">*</span></label>
+          <input 
+            id="email"
+            type="email" 
+            class="form-control" 
+            [class.is-invalid]="f['email'].touched && f['email'].invalid"
+            formControlName="email" 
+            placeholder="example@gmail.com..."
+          />
+          @if (f['email'].touched && f['email'].invalid) {
+            <div class="invalid-feedback">
+              @if (f['email'].errors?.['required']) {
+                <span>Email không được để trống!</span>
+              }
+              @if (f['email'].errors?.['email']) {
+                <span>Email không đúng định dạng!</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Số điện thoại -->
+        <div class="form-group col">
+          <label for="phone" class="form-label">Số điện thoại <span class="required">*</span></label>
+          <input 
+            id="phone"
+            type="text" 
+            class="form-control" 
+            [class.is-invalid]="f['phone'].touched && f['phone'].invalid"
+            formControlName="phone" 
+            placeholder="10 - 11 chữ số..."
+            maxlength="11"
+          />
+          @if (f['phone'].touched && f['phone'].invalid) {
+            <div class="invalid-feedback">
+              @if (f['phone'].errors?.['required']) {
+                <span>Số điện thoại không được để trống!</span>
+              }
+              @if (f['phone'].errors?.['pattern']) {
+                <span>Số điện thoại phải từ 10 đến 11 chữ số!</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- 4. Mật khẩu -->
+      <div class="form-group">
+        <label for="password" class="form-label">Mật khẩu <span class="required">*</span></label>
+        <div class="password-input-wrapper">
+          <input 
+            id="password"
+            [type]="showPassword ? 'text' : 'password'" 
+            class="form-control" 
+            [class.is-invalid]="f['password'].touched && f['password'].invalid"
+            formControlName="password" 
+            placeholder="Tối thiểu 8 ký tự, 1 hoa, 1 thường, 1 số, 1 ký tự đặc biệt..."
+          />
+          <button 
+            type="button" 
+            class="password-toggle-btn" 
+            (click)="toggleShowPassword()" 
+            tabindex="-1"
+            title="Ẩn/Hiện mật khẩu"
+          >
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (f['password'].touched && f['password'].invalid) {
+          <div class="invalid-feedback">
+            @if (f['password'].errors?.['required']) {
+              <span>Mật khẩu không được để trống!</span>
+            }
+            @if (f['password'].errors?.['pattern']) {
+              <span>Mật khẩu phải từ 8 ký tự trở lên, gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt!</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 5. Xác nhận mật khẩu -->
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">Xác nhận mật khẩu <span class="required">*</span></label>
+        <div class="password-input-wrapper">
+          <input 
+            id="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'" 
+            class="form-control" 
+            [class.is-invalid]="f['confirmPassword'].touched && (f['confirmPassword'].invalid || registerForm.hasError('passwordMismatch'))"
+            formControlName="confirmPassword" 
+            placeholder="Nhập lại mật khẩu vừa nhập..."
+          />
+          <button 
+            type="button" 
+            class="password-toggle-btn" 
+            (click)="toggleShowConfirmPassword()" 
+            tabindex="-1"
+            title="Ẩn/Hiện mật khẩu"
+          >
+            {{ showConfirmPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (f['confirmPassword'].touched && (f['confirmPassword'].invalid || registerForm.hasError('passwordMismatch'))) {
+          <div class="invalid-feedback">
+            @if (f['confirmPassword'].errors?.['required']) {
+              <span>Vui lòng xác nhận lại mật khẩu!</span>
+            }
+            @if (f['confirmPassword'].errors?.['passwordMismatch']) {
+              <span>Mật khẩu xác nhận không khớp!</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Nút bấm Đăng ký -->
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="isLoading">
+        @if (isLoading) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          <span>Đang tạo tài khoản...</span>
+        } @else {
+          <span>Đăng Ký Tài Khoản</span>
+        }
+      </button>
+
+      <!-- Liên kết chuyển sang màn hình Đăng nhập -->
+      <div class="register-footer">
+        <p>Đã có tài khoản thành viên? <a routerLink="/login" class="link-login">Đăng nhập ngay</a></p>
+      </div>
+    </form>
+  </div>
+</div>

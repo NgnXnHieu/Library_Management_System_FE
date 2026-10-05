@@ -1,0 +1,464 @@
+<!-- ==========================================================================
+     MÀN HÌNH DANH SÁCH SÁCH & THỂ LOẠI DÀNH CHO KHÁCH HÀNG (CUSTOMER VIEW)
+     - Bố cục 2 cột chuẩn E-commerce: Sidebar Filter Sticky + Lưới sách & Tabs sắp xếp
+     - Đầy đủ bộ lọc: Tìm kiếm, Thể loại, Khoảng giá Preset & Tùy chỉnh, Thẻ Active Chips
+     - Tuyệt đối KHÔNG có trường lọc theo Status (đảm bảo bảo mật)
+     - Hỗ trợ Mobile Drawer trượt mượt mà và phân trang tái sử dụng
+     ========================================================================== -->
+
+<div class="book-catalog-page">
+  
+  <!-- 1. BREADCRUMB & HERO BANNER TRANG CHỦ -->
+  <header class="catalog-hero-banner">
+    <div class="hero-container">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <a routerLink="/" class="breadcrumb-link">
+          <span class="breadcrumb-icon">🏠</span> Trang chủ
+        </a>
+        <span class="breadcrumb-sep">/</span>
+        <a routerLink="/books" class="breadcrumb-link" [class.active-link]="!selectedCategoryName">
+          Danh mục sách
+        </a>
+        @if (selectedCategoryName) {
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">{{ selectedCategoryName }}</span>
+        }
+      </nav>
+
+      <div class="hero-content-row">
+        <div class="hero-text">
+          <h1 class="hero-title">
+            @if (selectedCategoryName) {
+              <span>Thể loại: <mark class="highlight-text">{{ selectedCategoryName }}</mark></span>
+            } @else {
+              <span>Khám Phá <mark class="highlight-text">Kho Sách</mark> Tri Thức</span>
+            }
+          </h1>
+          <p class="hero-description">
+            Tra cứu hàng ngàn tựa sách chọn lọc, cập nhật liên tục các đầu sách mới và mượn đọc dễ dàng tại các chi nhánh thư viện.
+          </p>
+        </div>
+
+        <!-- Nút mở bộ lọc trên Mobile / Màn hình nhỏ -->
+        <div class="mobile-filter-trigger-wrapper">
+          <button 
+            type="button" 
+            class="btn-mobile-filter" 
+            (click)="toggleMobileFilter()"
+            aria-label="Mở bộ lọc tìm kiếm"
+          >
+            <span class="filter-icon">⚙️</span>
+            <span>Bộ Lọc</span>
+            @if (activeFilterCount > 0) {
+              <span class="filter-count-badge">{{ activeFilterCount }}</span>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. THANH ACTIVE FILTER CHIPS (HIỂN THỊ CÁC TIÊU CHÍ ĐANG LỌC) -->
+      @if (hasActiveFilters()) {
+        <div class="active-filters-bar">
+          <div class="active-filters-label">
+            <span class="tag-icon">🏷️</span>
+            <span>Đang lọc:</span>
+          </div>
+
+          <div class="active-chips-list">
+            <!-- Chip Thể loại -->
+            @if (selectedCategoryId !== null) {
+              <div class="active-chip">
+                <span class="chip-text">Thể loại: <strong>{{ selectedCategoryName || 'Đã chọn' }}</strong></span>
+                <button type="button" class="chip-remove" (click)="removeCategoryFilter()" title="Bỏ chọn thể loại">✕</button>
+              </div>
+            }
+
+            <!-- Chip Từ khóa tìm kiếm -->
+            @if (searchKeyword.trim()) {
+              <div class="active-chip">
+                <span class="chip-text">Từ khóa: <strong>"{{ searchKeyword }}"</strong></span>
+                <button type="button" class="chip-remove" (click)="removeKeywordFilter()" title="Xóa từ khóa">✕</button>
+              </div>
+            }
+
+            <!-- Chip Khoảng giá -->
+            @if (minPrice !== null || maxPrice !== null) {
+              <div class="active-chip">
+                <span class="chip-text">
+                  Giá: 
+                  <strong>
+                    @if (minPrice !== null && maxPrice !== null) {
+                      {{ minPrice | number:'1.0-0' }}đ - {{ maxPrice | number:'1.0-0' }}đ
+                    } @else if (minPrice !== null) {
+                      Từ {{ minPrice | number:'1.0-0' }}đ
+                    } @else {
+                      Đến {{ maxPrice | number:'1.0-0' }}đ
+                    }
+                  </strong>
+                </span>
+                <button type="button" class="chip-remove" (click)="removePriceFilter()" title="Xóa lọc giá">✕</button>
+              </div>
+            }
+
+            <!-- Nút xóa tất cả bộ lọc -->
+            <button type="button" class="btn-clear-all" (click)="resetFilters()">
+              <span>Xóa tất cả</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- 3. BỐ CỤC CHÍNH 2 CỘT (SIDEBAR FILTER + MAIN CONTENT) -->
+  <main class="catalog-main-layout container">
+    
+    <!-- Lớp phủ mờ Backdrop cho Mobile Drawer -->
+    @if (isMobileFilterOpen) {
+      <div class="mobile-drawer-backdrop" (click)="toggleMobileFilter()"></div>
+    }
+
+    <!-- CỘT 1: SIDEBAR BỘ LỌC TÌM KIẾM (STICKY) -->
+    <aside class="catalog-sidebar" [class.drawer-open]="isMobileFilterOpen">
+      <div class="sidebar-card">
+        
+        <!-- Header của Sidebar -->
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <span class="header-icon">🎯</span>
+            <span>Bộ Lọc Tìm Kiếm</span>
+          </div>
+
+          <div class="sidebar-header-actions">
+            @if (hasActiveFilters()) {
+              <button type="button" class="link-reset" (click)="resetFilters()">
+                Đặt lại
+              </button>
+            }
+            <!-- Nút đóng trên mobile drawer -->
+            <button type="button" class="btn-drawer-close" (click)="toggleMobileFilter()" aria-label="Đóng">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-body">
+          
+          <!-- KHỐI 1: TÌM KIẾM THEO TỪ KHÓA -->
+          <section class="filter-section">
+            <h3 class="section-title">
+              <span class="section-icon">🔍</span> Tìm kiếm sách
+            </h3>
+            <form (ngSubmit)="applyFilters()" class="search-form">
+              <div class="search-input-group">
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  placeholder="Tên sách, tác giả, ISBN..."
+                  [(ngModel)]="searchKeyword"
+                  name="searchKeyword"
+                />
+                @if (searchKeyword) {
+                  <button type="button" class="search-clear-btn" (click)="clearSearchInput()" title="Xóa tìm kiếm">
+                    ✕
+                  </button>
+                }
+                <button type="submit" class="search-submit-btn" title="Tìm kiếm">
+                  ➔
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- KHỐI 2: DANH MỤC THỂ LOẠI -->
+          <section class="filter-section">
+            <h3 class="section-title">
+              <span class="section-icon">📚</span> Danh mục thể loại
+            </h3>
+            
+            <div class="category-vertical-list">
+              <!-- Mục: Tất cả thể loại -->
+              <button 
+                type="button" 
+                class="category-list-item" 
+                [class.active]="selectedCategoryId === null"
+                (click)="selectCategory(null)"
+              >
+                <span class="cat-radio-indicator"></span>
+                <span class="cat-name">Tất cả thể loại</span>
+              </button>
+
+              <!-- Danh sách các thể loại động -->
+              @for (cat of categories; track cat.id) {
+                <button 
+                  type="button" 
+                  class="category-list-item" 
+                  [class.active]="selectedCategoryId === cat.id"
+                  (click)="selectCategory(cat)"
+                >
+                  <span class="cat-radio-indicator"></span>
+                  <span class="cat-name">{{ cat.name }}</span>
+                </button>
+              }
+            </div>
+          </section>
+
+          <!-- KHỐI 3: KHOẢNG GIÁ SÁCH -->
+          <section class="filter-section">
+            <h3 class="section-title">
+              <span class="section-icon">💵</span> Khoảng giá
+            </h3>
+
+            <!-- Các nút gợi ý giá chọn nhanh (Presets) -->
+            <div class="price-presets-grid">
+              @for (preset of pricePresets; track preset.label) {
+                <button 
+                  type="button" 
+                  class="price-preset-chip" 
+                  [class.active]="isPricePresetActive(preset)"
+                  (click)="selectPricePreset(preset)"
+                >
+                  {{ preset.label }}
+                </button>
+              }
+            </div>
+
+            <!-- Tùy chỉnh giá thủ công (Min - Max) -->
+            <div class="custom-price-block">
+              <div class="custom-price-label">Hoặc nhập khoảng giá (đ):</div>
+              <div class="price-inputs-row">
+                <input 
+                  type="number" 
+                  class="price-input" 
+                  placeholder="Từ..." 
+                  [(ngModel)]="minPrice" 
+                  name="minPrice"
+                  min="0"
+                  step="10000"
+                />
+                <span class="price-sep">-</span>
+                <input 
+                  type="number" 
+                  class="price-input" 
+                  placeholder="Đến..." 
+                  [(ngModel)]="maxPrice" 
+                  name="maxPrice"
+                  min="0"
+                  step="10000"
+                />
+              </div>
+              <button type="button" class="btn-apply-price" (click)="applyFilters()">
+                Áp dụng khoảng giá
+              </button>
+            </div>
+          </section>
+
+          <!-- NÚT ÁP DỤNG TRÊN MOBILE -->
+          <div class="mobile-drawer-footer">
+            <button type="button" class="btn-drawer-apply" (click)="applyFilters()">
+              Xem kết quả ({{ totalElements }} sách)
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+
+    <!-- CỘT 2: NỘI DUNG CHÍNH (SẮP XẾP & LƯỚI SÁCH) -->
+    <section class="catalog-content-area">
+      
+      <!-- THANH ĐIỀU KHIỂN SẮP XẾP & SỐ LƯỢNG KẾT QUẢ -->
+      <div class="catalog-toolbar-card">
+        
+        <div class="toolbar-results-count">
+          <span class="count-highlight">{{ totalElements }}</span>
+          <span class="count-label">kết quả phù hợp</span>
+        </div>
+
+        <!-- Các Tab Sắp xếp hiện đại -->
+        <div class="sorting-tabs-wrapper">
+          <span class="sort-prefix">Sắp xếp theo:</span>
+          
+          <div class="sort-tabs">
+            <button 
+              type="button" 
+              class="sort-tab" 
+              [class.active]="isSortActive('createdAt', 'desc')"
+              (click)="setSort('createdAt', 'desc')"
+            >
+              Mới nhất
+            </button>
+
+            <button 
+              type="button" 
+              class="sort-tab" 
+              [class.active]="isSortActive('price', 'asc')"
+              (click)="setSort('price', 'asc')"
+            >
+              Giá thấp → cao
+            </button>
+
+            <button 
+              type="button" 
+              class="sort-tab" 
+              [class.active]="isSortActive('price', 'desc')"
+              (click)="setSort('price', 'desc')"
+            >
+              Giá cao → thấp
+            </button>
+
+            <button 
+              type="button" 
+              class="sort-tab" 
+              [class.active]="isSortActive('rentalPrice', 'asc')"
+              (click)="setSort('rentalPrice', 'asc')"
+            >
+              Giá thuê rẻ nhất
+            </button>
+
+            <button 
+              type="button" 
+              class="sort-tab" 
+              [class.active]="isSortActive('title', 'asc')"
+              (click)="setSort('title', 'asc')"
+            >
+              Tên A - Z
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TRẠNG THÁI TẢI DỮ LIỆU (LOADING SPINNER) -->
+      @if (isLoading) {
+        <div class="catalog-loading-state">
+          <div class="spinner-pulse"></div>
+          <p class="loading-message">Đang tìm kiếm và tải sách phù hợp...</p>
+        </div>
+      } 
+      
+      <!-- TRẠNG THÁI KHÔNG TÌM THẤY SÁCH (EMPTY STATE) -->
+      @else if (books.length === 0) {
+        <div class="catalog-empty-card">
+          <div class="empty-illustration">📚🔍</div>
+          <h2 class="empty-headline">Không tìm thấy sách nào phù hợp</h2>
+          <p class="empty-subtext">
+            Rất tiếc, hệ thống không tìm thấy cuốn sách nào khớp với các tiêu chí lọc hiện tại của bạn.
+            Hãy thử tìm bằng từ khóa ngắn gọn hơn hoặc mở rộng khoảng giá.
+          </p>
+          <div class="empty-actions">
+            <button type="button" class="btn-empty-reset" (click)="resetFilters()">
+              🔄 Xem toàn bộ kho sách
+            </button>
+          </div>
+        </div>
+      } 
+      
+      <!-- LƯỚI THẺ SÁCH (BOOK GRID) -->
+      @else {
+        <div class="books-grid">
+          @for (book of books; track book.id) {
+            <article class="book-card">
+              
+              <!-- Khung ảnh bìa sách -->
+              <div class="book-cover-frame">
+                <a [routerLink]="['/books', book.id]" class="cover-link" tabindex="-1">
+                  @if (book.coverImageUrl) {
+                    <img 
+                      [src]="book.coverImageUrl" 
+                      [alt]="book.title" 
+                      class="book-cover-img" 
+                      loading="lazy" 
+                    />
+                  } @else {
+                    <div class="book-cover-mockup">
+                      <span class="mockup-icon">📖</span>
+                      <span class="mockup-title">{{ book.title }}</span>
+                    </div>
+                  }
+                </a>
+
+                <!-- Huy hiệu thể loại nổi (Glassmorphism badge) -->
+                @if (book.categoryName) {
+                  <span class="floating-category-badge" [title]="book.categoryName">
+                    {{ book.categoryName }}
+                  </span>
+                }
+              </div>
+
+              <!-- Nội dung chi tiết sách -->
+              <div class="book-card-details">
+                <h2 class="card-book-title">
+                  <a [routerLink]="['/books', book.id]" class="title-link" [title]="book.title">
+                    {{ book.title }}
+                  </a>
+                </h2>
+
+                <div class="card-author-row">
+                  <span class="author-icon">✍️</span>
+                  <span class="author-name" [title]="book.author || 'Đang cập nhật'">
+                    {{ book.author || 'Đang cập nhật' }}
+                  </span>
+                </div>
+
+                <div class="card-meta-line">
+                  @if (book.publisher) {
+                    <span class="meta-tag">NXB: {{ book.publisher }}</span>
+                  }
+                  @if (book.publicationYear) {
+                    <span class="meta-tag">Năm: {{ book.publicationYear }}</span>
+                  }
+                </div>
+
+                <!-- Khối hiển thị giá -->
+                <div class="card-pricing-box">
+                  <div class="price-row rental">
+                    <span class="price-label">Giá mượn:</span>
+                    <span class="rental-price-value">
+                      {{ (book.rentalPrice || 0) | number:'1.0-0' }} <span class="currency">đ</span><span class="unit">/ngày</span>
+                    </span>
+                  </div>
+
+                  @if (book.price) {
+                    <div class="price-row original">
+                      <span class="price-label">Giá bìa:</span>
+                      <span class="original-price-value">
+                        {{ book.price | number:'1.0-0' }} đ
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Nút hành động xem chi tiết & tồn kho -->
+                <div class="card-footer-action">
+                  <a [routerLink]="['/books', book.id]" class="btn-view-detail">
+                    <span>Xem chi tiết & Mượn</span>
+                    <span class="btn-arrow">→</span>
+                  </a>
+                </div>
+
+              </div>
+
+            </article>
+          }
+        </div>
+
+        <!-- 4. PHÂN TRANG (PAGINATION) -->
+        <div class="catalog-pagination-container">
+          <app-pagination 
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalElements]="totalElements"
+            [totalPages]="totalPages"
+            [pageSizeOptions]="[12, 24, 36, 48]"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)"
+          />
+        </div>
+      }
+
+    </section>
+
+  </main>
+
+</div>

@@ -21,14 +21,14 @@ export class AdminSidebarComponent {
 
   // Danh mục menu riêng của Quản trị viên
   public menuItems = [
-    { title: 'Bảng Điều Khiển Toàn Cầu', icon: '📊', route: '/admin/dashboard' },
+    { title: 'Báo Cáo Tổng Hợp', icon: '📈', route: '/admin/reports' },
     { title: 'Quản Lý Chi Nhánh', icon: '🏛️', route: '/admin/branches' },
     { title: 'Quản Lý Đầu Sách', icon: '📖', route: '/admin/books' },
     { title: 'Kho Sách Toàn Hệ Thống', icon: '📚', route: '/admin/inventory' },
     { title: 'Quản Lý Phiếu Mượn', icon: '📋', route: '/admin/borrow-slips' },
     { title: 'Danh Mục Thể Loại', icon: '📑', route: '/admin/categories' },
     { title: 'Tài Khoản & Phân Quyền', icon: '🔑', route: '/admin/users' },
-    { title: 'Báo Cáo Tổng Hợp', icon: '📈', route: '/admin/reports' }
+    { title: 'Quản Lý Khách Hàng', icon: '👥', route: '/admin/customers' }
   ];
 
   onLogout(): void {

@@ -21,6 +21,22 @@ export interface BranchResponseDto {
 }
 
 /**
+ * Interface DTO thống kê tổng hợp chi nhánh nhận từ API GET /admin/branches/statistics
+ */
+export interface BranchStatisticResponseDto {
+  id: number;
+  code: string;
+  name: string;
+  status: BranchStatus;
+  imageUrl?: string;
+  totalBooksInStock: number;
+  totalAvailableBooks: number;
+  totalBorrowedBooks: number;
+  totalBorrowSlips: number;
+  totalRevenue: number;
+}
+
+/**
  * Interface tham số lọc danh sách chi nhánh
  */
 export interface BranchFilterRequest {
@@ -29,6 +45,8 @@ export interface BranchFilterRequest {
   address?: string;
   phone?: string;
   status?: string;
+  fromDate?: string;
+  toDate?: string;
   page?: number;
   size?: number;
   sortBy?: string;

@@ -69,6 +69,11 @@ export class AdminBookListComponent implements OnInit {
   public currentEditingId: number | null = null;
   public isSubmitting: boolean = false;
 
+  // Quản lý thông báo lỗi hiển thị trên màn hình
+  public pageErrorMessage: string = '';
+  public modalErrorMessage: string = '';
+  public deleteErrorMessage: string = '';
+
   // Quản lý upload và xem trước ảnh bìa sách
   public imagePreviewUrl: string | null = null;
   public isUploadingImage: boolean = false;
@@ -88,6 +93,7 @@ export class AdminBookListComponent implements OnInit {
     publicationYear: [null, [Validators.min(1000), Validators.max(2100)]],
     price: [null, [Validators.min(0)]],
     rentalPrice: [null, [Validators.min(0)]],
+    fineAmount: [0, [Validators.required, Validators.min(0)]],
     status: ['UNHIDE', [Validators.required]],
     description: [''],
     coverImageKey: ['']
@@ -95,6 +101,52 @@ export class AdminBookListComponent implements OnInit {
 
   get f() {
     return this.bookForm.controls;
+  }
+
+  /**
+   * Trích xuất thông điệp lỗi chi tiết từ phản hồi của Backend
+   * - Hỗ trợ bóc tách danh sách lỗi validate trường dữ liệu (err.error.data)
+   * - Ưu tiên thông điệp lỗi chi tiết từ máy chủ để hiển thị lên màn hình
+   */
+  extractErrorMessage(err: any, fallbackMessage: string): string {
+    // 1. Kiểm tra nếu backend trả về danh sách field errors dạng Object { fieldName: "thông báo lỗi" }
+    if (err?.error?.data && typeof err.error.data === 'object' && !Array.isArray(err.error.data)) {
+      const fieldLabels: Record<string, string> = {
+        title: 'Tiêu đề sách',
+        isbn: 'Mã ISBN',
+        categoryId: 'Thể loại',
+        author: 'Tác giả',
+        publisher: 'Nhà xuất bản',
+        publicationYear: 'Năm xuất bản',
+        price: 'Giá bán',
+        rentalPrice: 'Giá thuê',
+        fineAmount: 'Tiền phạt quá hạn',
+        description: 'Mô tả',
+        coverImageKey: 'Ảnh bìa sách',
+        status: 'Trạng thái'
+      };
+
+      const fieldErrorMessages = Object.entries(err.error.data).map(([field, msg]) => {
+        const label = fieldLabels[field] || field;
+        return `${label}: ${msg}`;
+      });
+
+      if (fieldErrorMessages.length > 0) {
+        return fieldErrorMessages.join(' • ');
+      }
+    }
+
+    // 2. Nếu có message trực tiếp từ API backend
+    if (err?.error?.message && typeof err.error.message === 'string' && err.error.message.trim()) {
+      return err.error.message;
+    }
+
+    // 3. Nếu có lỗi chung từ HttpErrorResponse
+    if (err?.message && typeof err.message === 'string' && err.message.trim()) {
+      return err.message;
+    }
+
+    return fallbackMessage;
   }
 
   ngOnInit(): void {
@@ -135,6 +187,7 @@ export class AdminBookListComponent implements OnInit {
     this.bookService.getAdminBooks(requestPayload).subscribe({
       next: (res) => {
         this.isLoading = false;
+        this.pageErrorMessage = '';
         if (res.success && res.data) {
           this.books = res.data.content;
           this.totalElements = res.data.totalElements;
@@ -151,7 +204,8 @@ export class AdminBookListComponent implements OnInit {
         this.totalElements = 0;
         this.totalPages = 0;
         console.error('[AdminBookList] Lỗi tải danh sách đầu sách:', err);
-        const msg = err.error?.message || 'Không thể tải danh sách đầu sách, vui lòng thử lại sau!';
+        const msg = this.extractErrorMessage(err, 'Không thể tải danh sách đầu sách, vui lòng thử lại sau!');
+        this.pageErrorMessage = msg;
         this.toastService.error(msg);
       }
     });
@@ -261,6 +315,7 @@ export class AdminBookListComponent implements OnInit {
     this.isEditMode = false;
     this.currentEditingId = null;
     this.imagePreviewUrl = null;
+    this.modalErrorMessage = '';
     this.bookForm.reset({
       title: '',
       isbn: '',
@@ -270,6 +325,7 @@ export class AdminBookListComponent implements OnInit {
       publicationYear: null,
       price: null,
       rentalPrice: null,
+      fineAmount: 0,
       status: 'UNHIDE',
       description: '',
       coverImageKey: ''
@@ -283,6 +339,7 @@ export class AdminBookListComponent implements OnInit {
   openEditModal(book: BookResponseDto): void {
     this.isEditMode = true;
     this.currentEditingId = book.id;
+    this.modalErrorMessage = '';
     this.imagePreviewUrl = book.coverImageUrl ? this.getImageUrl(book.coverImageUrl) : null;
     this.bookForm.patchValue({
       title: book.title,
@@ -293,6 +350,7 @@ export class AdminBookListComponent implements OnInit {
       publicationYear: book.publicationYear || null,
       price: book.price != null ? Number(book.price) : null,
       rentalPrice: book.rentalPrice != null ? Number(book.rentalPrice) : null,
+      fineAmount: book.fineAmount != null ? Number(book.fineAmount) : 0,
       status: book.status,
       description: book.description || '',
       coverImageKey: book.coverImageKey || ''
@@ -305,6 +363,7 @@ export class AdminBookListComponent implements OnInit {
    */
   closeModal(): void {
     this.isModalOpen = false;
+    this.modalErrorMessage = '';
     this.imagePreviewUrl = null;
     this.bookForm.reset();
   }
@@ -338,6 +397,7 @@ export class AdminBookListComponent implements OnInit {
     }
 
     this.isUploadingImage = true;
+    this.modalErrorMessage = '';
     this.bookService.uploadBookCover(file).subscribe({
       next: (res) => {
         this.isUploadingImage = false;
@@ -354,7 +414,8 @@ export class AdminBookListComponent implements OnInit {
         this.isUploadingImage = false;
         input.value = '';
         console.error('[AdminBookList] Lỗi tải ảnh bìa lên server:', err);
-        const msg = err.error?.message || 'Không thể tải ảnh bìa lên, vui lòng thử lại!';
+        const msg = this.extractErrorMessage(err, 'Không thể tải ảnh bìa lên, vui lòng thử lại!');
+        this.modalErrorMessage = msg;
         this.toastService.error(msg);
       }
     });
@@ -384,8 +445,10 @@ export class AdminBookListComponent implements OnInit {
    * Lưu thông tin sách (Thêm mới hoặc Cập nhật)
    */
   onSaveBook(): void {
+    this.modalErrorMessage = '';
     if (this.bookForm.invalid) {
       this.bookForm.markAllAsTouched();
+      this.modalErrorMessage = 'Vui lòng kiểm tra lại các trường bắt buộc có dấu (*) và đảm bảo dữ liệu hợp lệ!';
       this.toastService.warning('Vui lòng kiểm tra lại các trường bắt buộc!');
       return;
     }
@@ -404,6 +467,7 @@ export class AdminBookListComponent implements OnInit {
         publicationYear: formVal.publicationYear ? Number(formVal.publicationYear) : undefined,
         price: formVal.price != null && formVal.price !== '' ? Number(formVal.price) : undefined,
         rentalPrice: formVal.rentalPrice != null && formVal.rentalPrice !== '' ? Number(formVal.rentalPrice) : undefined,
+        fineAmount: formVal.fineAmount != null && formVal.fineAmount !== '' ? Number(formVal.fineAmount) : undefined,
         status: formVal.status,
         description: formVal.description?.trim() || undefined,
         coverImageKey: formVal.coverImageKey || undefined
@@ -421,7 +485,8 @@ export class AdminBookListComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('[AdminBookList] Lỗi cập nhật đầu sách:', err);
-          const msg = err.error?.message || 'Có lỗi xảy ra khi cập nhật đầu sách!';
+          const msg = this.extractErrorMessage(err, 'Có lỗi xảy ra khi cập nhật đầu sách!');
+          this.modalErrorMessage = msg;
           this.toastService.error(msg);
         }
       });
@@ -436,6 +501,7 @@ export class AdminBookListComponent implements OnInit {
         publicationYear: formVal.publicationYear ? Number(formVal.publicationYear) : undefined,
         price: formVal.price != null && formVal.price !== '' ? Number(formVal.price) : undefined,
         rentalPrice: formVal.rentalPrice != null && formVal.rentalPrice !== '' ? Number(formVal.rentalPrice) : undefined,
+        fineAmount: formVal.fineAmount != null && formVal.fineAmount !== '' ? Number(formVal.fineAmount) : 0,
         status: formVal.status,
         description: formVal.description?.trim() || undefined,
         coverImageKey: formVal.coverImageKey || undefined
@@ -453,7 +519,8 @@ export class AdminBookListComponent implements OnInit {
         error: (err) => {
           this.isSubmitting = false;
           console.error('[AdminBookList] Lỗi thêm mới đầu sách:', err);
-          const msg = err.error?.message || 'Có lỗi xảy ra khi thêm mới đầu sách!';
+          const msg = this.extractErrorMessage(err, 'Có lỗi xảy ra khi thêm mới đầu sách!');
+          this.modalErrorMessage = msg;
           this.toastService.error(msg);
         }
       });
@@ -475,7 +542,8 @@ export class AdminBookListComponent implements OnInit {
       },
       error: (err) => {
         console.error('[AdminBookList] Lỗi đổi trạng thái đầu sách:', err);
-        const msg = err.error?.message || 'Không thể đổi trạng thái sách, vui lòng thử lại!';
+        const msg = this.extractErrorMessage(err, 'Không thể đổi trạng thái sách, vui lòng thử lại!');
+        this.pageErrorMessage = msg;
         this.toastService.error(msg);
       }
     });
@@ -486,6 +554,7 @@ export class AdminBookListComponent implements OnInit {
    */
   openDeleteModal(book: BookResponseDto): void {
     this.bookToDelete = book;
+    this.deleteErrorMessage = '';
     this.isDeleteModalOpen = true;
   }
 
@@ -495,6 +564,7 @@ export class AdminBookListComponent implements OnInit {
   closeDeleteModal(): void {
     this.isDeleteModalOpen = false;
     this.bookToDelete = null;
+    this.deleteErrorMessage = '';
   }
 
   /**
@@ -504,6 +574,7 @@ export class AdminBookListComponent implements OnInit {
     if (!this.bookToDelete) return;
 
     this.isDeleting = true;
+    this.deleteErrorMessage = '';
     const bookTitle = this.bookToDelete.title;
     this.bookService.deleteBook(this.bookToDelete.id).subscribe({
       next: (res) => {
@@ -515,7 +586,9 @@ export class AdminBookListComponent implements OnInit {
       error: (err) => {
         this.isDeleting = false;
         console.error('[AdminBookList] Lỗi xóa đầu sách:', err);
-        const msg = err.error?.message || 'Không thể xóa đầu sách do đã phát sinh giao dịch mượn!';
+        const msg = this.extractErrorMessage(err, 'Không thể xóa đầu sách do đã phát sinh giao dịch mượn!');
+        this.deleteErrorMessage = msg;
+        this.pageErrorMessage = msg;
         this.toastService.error(msg);
       }
     });

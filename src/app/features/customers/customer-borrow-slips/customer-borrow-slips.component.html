@@ -1,0 +1,348 @@
+<div class="customer-borrow-slips-container">
+
+  <!-- THANH TIÊU ĐỀ & ĐIỀU HƯỚNG QUAY LẠI -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn btn-outline back-btn" (click)="goBack()">
+        ← Quay lại danh sách
+      </button>
+      <div>
+        <h1 class="page-title">Lịch Sử Phiếu Mượn Khách Hàng</h1>
+        <p class="page-subtitle">
+          Theo dõi toàn bộ các giao dịch mượn, trả và trạng thái thanh toán của độc giả
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD TÓM TẮT THÔNG TIN KHÁCH HÀNG -->
+  <div class="customer-profile-card">
+    <div class="avatar-box">
+      <span class="avatar-icon">👤</span>
+    </div>
+    <div class="profile-details">
+      <div class="profile-main">
+        <h2 class="customer-name">{{ customerInfo.fullName || 'Khách Hàng #' + customerId }}</h2>
+        <span class="customer-username">&#64;{{ customerInfo.username || 'user' }}</span>
+        <span class="customer-id-badge">ID: {{ customerId }}</span>
+      </div>
+      <div class="profile-contacts">
+        <div class="contact-item">
+          <span class="contact-label">📞 Số điện thoại:</span>
+          <span class="contact-value">{{ customerInfo.phone || 'Chưa cập nhật' }}</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">✉️ Email:</span>
+          <span class="contact-value">{{ customerInfo.email || 'Chưa cập nhật' }}</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">📊 Tổng số phiếu mượn:</span>
+          <span class="contact-value highlight">{{ totalElements }} phiếu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KHUNG TÌM KIẾM VÀ BỘ LỌC ĐA TIÊU CHÍ -->
+  <div class="filter-panel">
+    <form (ngSubmit)="onApplyFilter()" class="filter-form">
+      <div class="filter-grid">
+        
+        <!-- Lọc theo mã phiếu -->
+        <div class="form-group">
+          <label class="form-label">Mã phiếu mượn</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [(ngModel)]="filterParams.borrowCode" 
+            name="borrowCode" 
+            placeholder="Ví dụ: BRW-202610-001..." />
+        </div>
+
+        <!-- Lọc theo trạng thái phiếu mượn -->
+        <div class="form-group">
+          <label class="form-label">Trạng thái mượn</label>
+          <select 
+            class="form-control" 
+            [(ngModel)]="filterParams.status" 
+            name="status">
+            <option [ngValue]="undefined">-- Tất cả trạng thái --</option>
+            <option value="BORROWED">Đang mượn</option>
+            <option value="RETURNED">Đã trả</option>
+            <option value="OVERDUE">Quá hạn</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+        </div>
+
+        <!-- Lọc theo trạng thái thanh toán -->
+        <div class="form-group">
+          <label class="form-label">Thanh toán</label>
+          <select 
+            class="form-control" 
+            [(ngModel)]="filterParams.paymentStatus" 
+            name="paymentStatus">
+            <option [ngValue]="undefined">-- Tất cả --</option>
+            <option value="UNPAID">Chưa thanh toán</option>
+            <option value="PAID">Đã thanh toán</option>
+            <option value="REFUNDED">Đã hoàn tiền</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+        </div>
+
+        <!-- Khoảng ngày mượn: Từ ngày -->
+        <div class="form-group">
+          <label class="form-label">Mượn từ ngày</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="filterParams.fromBorrowedDate" 
+            name="fromBorrowedDate" />
+        </div>
+
+        <!-- Khoảng ngày mượn: Đến ngày -->
+        <div class="form-group">
+          <label class="form-label">Đến ngày</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="filterParams.toBorrowedDate" 
+            name="toBorrowedDate" />
+        </div>
+
+        <!-- Sắp xếp theo trường -->
+        <div class="form-group">
+          <label class="form-label">Sắp xếp theo</label>
+          <select 
+            class="form-control" 
+            [(ngModel)]="filterParams.sortBy" 
+            name="sortBy">
+            <option value="borrowedAt">Thời gian mượn</option>
+            <option value="dueAt">Hạn trả</option>
+            <option value="returnedAt">Thời gian trả</option>
+            <option value="totalAmount">Tổng tiền</option>
+          </select>
+        </div>
+
+        <!-- Thứ tự sắp xếp -->
+        <div class="form-group">
+          <label class="form-label">Thứ tự</label>
+          <select 
+            class="form-control" 
+            [(ngModel)]="filterParams.sortDir" 
+            name="sortDir">
+            <option value="desc">Mới nhất / Lớn nhất (Giảm dần)</option>
+            <option value="asc">Cũ nhất / Nhỏ nhất (Tăng dần)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Nút hành động tìm kiếm & đặt lại -->
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+          🔍 Tìm kiếm
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="onResetFilter()" [disabled]="isLoading">
+          🔄 Đặt lại
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- BẢNG DANH SÁCH PHIẾU MƯỢN -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Mã Phiếu</th>
+            <th>Chi Nhánh</th>
+            <th>Ngày Mượn</th>
+            <th>Hạn Trả</th>
+            <th>Ngày Trả</th>
+            <th class="text-center">Số Lượng</th>
+            <th class="text-right">Tổng Tiền</th>
+            <th class="text-center">Trạng Thái</th>
+            <th class="text-center">Thanh Toán</th>
+            <th class="text-center">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Trạng thái Loading -->
+          <tr *ngIf="isLoading">
+            <td colspan="11" class="text-center py-4">
+              <div class="spinner"></div>
+              <p class="mt-2 text-muted">Đang tải danh sách phiếu mượn...</p>
+            </td>
+          </tr>
+
+          <!-- Trạng thái Không có dữ liệu -->
+          <tr *ngIf="!isLoading && borrowSlips.length === 0">
+            <td colspan="11" class="text-center py-5 empty-row">
+              <span class="empty-icon">📭</span>
+              <p class="empty-title">Không tìm thấy phiếu mượn nào của khách hàng này!</p>
+              <p class="empty-sub">Hãy thử đổi tiêu chí tìm kiếm hoặc kiểm tra lại bộ lọc.</p>
+            </td>
+          </tr>
+
+          <!-- Dữ liệu danh sách phiếu mượn -->
+          <tr *ngFor="let slip of borrowSlips; let i = index">
+            <td>{{ currentPage * pageSize + i + 1 }}</td>
+            <td class="font-weight-bold font-monospace">{{ slip.borrowCode }}</td>
+            <td>
+              <span class="branch-name">{{ slip.branchName }}</span>
+            </td>
+            <td>{{ slip.borrowedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <div class="date-cell">
+                <span class="due-date" [class.due-warning]="isOverdue(slip)">{{ slip.dueAt | date:'dd/MM/yyyy' }}</span>
+                <small class="time-sub" [class.due-warning]="isOverdue(slip)">{{ slip.dueAt | date:'HH:mm' }}</small>
+              </div>
+            </td>
+            <td>
+              <span *ngIf="slip.returnedAt">{{ slip.returnedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="!slip.returnedAt" class="text-muted">—</span>
+            </td>
+            <td class="text-center">
+              <span class="qty-badge">{{ slip.totalQuantity }} cuốn</span>
+            </td>
+            <td class="text-right font-weight-bold text-primary">
+              {{ slip.totalAmount | number:'1.0-0' }} đ
+            </td>
+            <td class="text-center">
+              <div class="status-cell">
+                <span class="badge" [ngClass]="getStatusClass(slip)">
+                  {{ getStatusLabel(slip) }}
+                </span>
+                <small *ngIf="isOverdue(slip)" class="overdue-days-text">Quá {{ getOverdueDays(slip) }} ngày</small>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="getPaymentClass(slip.paymentStatus)">
+                {{ getPaymentLabel(slip.paymentStatus) }}
+              </span>
+            </td>
+            <td class="text-center">
+              <button 
+                class="btn btn-action btn-info" 
+                (click)="openDetailModal(slip)" 
+                title="Xem chi tiết các cuốn sách trong phiếu">
+                👁️ Chi tiết
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PHÂN TRANG -->
+    <div class="pagination-wrapper" *ngIf="!isLoading && totalElements > 0">
+      <app-pagination
+        [currentPage]="currentPage"
+        [pageSize]="pageSize"
+        [totalElements]="totalElements"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+
+  <!-- MODAL XEM CHI TIẾT SÁCH MƯỢN TRONG PHIẾU -->
+  <div class="modal-backdrop" *ngIf="selectedSlipForDetail" (click)="closeDetailModal()">
+    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          📋 Chi Tiết Phiếu Mượn: <span class="highlight">{{ selectedSlipForDetail.borrowCode }}</span>
+        </h3>
+        <button class="close-btn" (click)="closeDetailModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Thông tin tóm tắt phiếu mượn -->
+        <div class="slip-summary-grid">
+          <div class="summary-item">
+            <span class="summary-label">Chi nhánh:</span>
+            <span class="summary-value">{{ selectedSlipForDetail.branchName }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Nhân viên lập:</span>
+            <span class="summary-value">{{ selectedSlipForDetail.staffName }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Ngày mượn:</span>
+            <span class="summary-value">{{ selectedSlipForDetail.borrowedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Hạn trả:</span>
+            <span class="summary-value font-weight-bold" [class.text-danger]="isOverdue(selectedSlipForDetail)">
+              {{ selectedSlipForDetail.dueAt | date:'dd/MM/yyyy HH:mm' }}
+              <span *ngIf="isOverdue(selectedSlipForDetail)" class="overdue-days-text"> (Quá {{ getOverdueDays(selectedSlipForDetail) }} ngày)</span>
+            </span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Ngày trả thực tế:</span>
+            <span class="summary-value">{{ selectedSlipForDetail.returnedAt ? (selectedSlipForDetail.returnedAt | date:'dd/MM/yyyy HH:mm') : 'Chưa trả' }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Trạng thái:</span>
+            <span class="badge" [ngClass]="getStatusClass(selectedSlipForDetail)">
+              {{ getStatusLabel(selectedSlipForDetail) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Bảng danh sách sách bên trong phiếu -->
+        <h4 class="section-title mt-4">📚 Danh Sách Sách Mượn</h4>
+        <div class="table-responsive">
+          <table class="custom-table table-bordered">
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Tên Đầu Sách</th>
+                <th>Mã ISBN</th>
+                <th class="text-center" style="width: 100px;">Số Lượng</th>
+                <th class="text-right" style="width: 130px;">Giá Thuê</th>
+                <th class="text-right" style="width: 140px;">Thành Tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedSlipForDetail.items; let idx = index">
+                <td>{{ idx + 1 }}</td>
+                <td class="font-weight-bold">{{ item.bookTitle }}</td>
+                <td>
+                  <span class="badge-isbn">{{ item.isbn || 'N/A' }}</span>
+                </td>
+                <td class="text-center font-weight-bold">{{ item.quantity }}</td>
+                <td class="text-right">{{ item.rentalPrice | number:'1.0-0' }} đ</td>
+                <td class="text-right font-weight-bold text-primary">
+                  {{ (item.quantity * item.rentalPrice) | number:'1.0-0' }} đ
+                </td>
+              </tr>
+              <tr *ngIf="!selectedSlipForDetail.items || selectedSlipForDetail.items.length === 0">
+                <td colspan="6" class="text-center py-3 text-muted">
+                  Không có dữ liệu chi tiết sách của phiếu mượn này.
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-right font-weight-bold">Tổng cộng:</td>
+                <td class="text-center font-weight-bold text-primary">{{ selectedSlipForDetail.totalQuantity }} cuốn</td>
+                <td></td>
+                <td class="text-right font-weight-bold text-danger" style="font-size: 1.1rem;">
+                  {{ selectedSlipForDetail.totalAmount | number:'1.0-0' }} đ
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+</div>

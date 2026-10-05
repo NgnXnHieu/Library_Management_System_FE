@@ -22,9 +22,10 @@ export class StaffSidebarComponent {
   // Danh mục menu riêng của nhân viên quầy
   public menuItems = [
     { title: 'Bàn Làm Việc Quầy', icon: '📊', route: '/staff/dashboard' },
+    { title: 'Lập Phiếu Mượn', icon: '📝', route: '/staff/create-slip' },
     { title: 'Xử Lý Mượn / Trả', icon: '📋', route: '/staff/borrow-slips' },
-    { title: 'Kho Sách', icon: '📚', route: '/staff/inventory' },
-    { title: 'Hồ Sơ Độc Giả', icon: '👥', route: '/staff/patrons' }
+    { title: 'Tra Cứu Kho Sách', icon: '📚', route: '/staff/inventory' },
+    { title: 'Hồ Sơ Khách Hàng', icon: '👥', route: '/staff/patrons' }
   ];
 
   onLogout(): void {

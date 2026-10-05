@@ -43,6 +43,9 @@ export class AdminBorrowSlipService {
     if (filter.customerSearch && filter.customerSearch.trim()) {
       params = params.set('customerSearch', filter.customerSearch.trim());
     }
+    if (filter.customerId !== undefined && filter.customerId !== null) {
+      params = params.set('customerId', filter.customerId.toString());
+    }
     if (filter.branchId !== undefined && filter.branchId !== null) {
       params = params.set('branchId', filter.branchId.toString());
     }

@@ -1,0 +1,770 @@
+/* ==========================================================================
+   CSS CHO MÀN HÌNH CHI TIẾT SÁCH DÀNH CHO KHÁCH HÀNG (CUSTOMER BOOK DETAIL)
+   Thiết kế cao cấp, thẩm mỹ, phong cách e-commerce hiện đại
+   Tích hợp thông tin tổng quan, bảng giá mượn và tra cứu tồn kho chi nhánh
+   ========================================================================== */
+
+:host {
+  display: block;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.book-detail-page {
+  padding: 30px 0 80px;
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------------------------------------------------------
+   1. BREADCRUMB ĐIỀU HƯỚNG
+   --------------------------------------------------------- */
+.detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.crumb-link {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.crumb-link:hover {
+  color: #2563eb;
+}
+
+.crumb-sep {
+  color: #cbd5e1;
+}
+
+.crumb-current {
+  color: #0f172a;
+  font-weight: 600;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------
+   2. TRẠNG THÁI LOADING & ERROR
+   --------------------------------------------------------- */
+.detail-loading-box {
+  text-align: center;
+  padding: 100px 20px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.spinner-detail {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 18px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-msg {
+  font-size: 15px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.detail-error-card {
+  text-align: center;
+  padding: 80px 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px dashed #cbd5e1;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.error-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.error-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+}
+
+.error-desc {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------
+   3. KHỐI TỔNG QUAN SÁCH (OVERVIEW CARD)
+   --------------------------------------------------------- */
+.book-overview-card {
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 25px -4px rgba(15, 23, 42, 0.06);
+  padding: 36px;
+  margin-bottom: 36px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Cột Trái: Bìa Sách & Trạng Thái */
+.cover-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-cover-wrapper {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.18);
+  background-color: #f1f5f9;
+}
+
+.detail-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.detail-cover-wrapper:hover .detail-cover-img {
+  transform: scale(1.03);
+}
+
+.detail-cover-mockup {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.mockup-icon {
+  font-size: 54px;
+  margin-bottom: 12px;
+}
+
+.mockup-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #f8fafc;
+}
+
+.badge-category-float {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Hộp trạng thái khả dụng */
+.availability-status-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.availability-status-box.in-stock {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.availability-status-box.out-of-stock {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.status-dot.gray {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* Cột Phải: Thông Tin Sách & Bảng Giá */
+.info-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-meta-tag {
+  margin-bottom: 10px;
+}
+
+.category-pill-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.category-pill-link:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.detail-book-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+  margin: 0 0 16px;
+  letter-spacing: -0.5px;
+}
+
+.author-publisher-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 14px;
+}
+
+.meta-inline-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.meta-inline-item .meta-val {
+  color: #0f172a;
+}
+
+.isbn-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  font-size: 12px;
+}
+
+.isbn-label {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.isbn-code {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+/* Card Bảng Giá */
+.pricing-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.pricing-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.price-highlight-row {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.price-main-box .price-type {
+  display: block;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 2px;
+}
+
+.price-value-big {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2563eb;
+  line-height: 1.1;
+}
+
+.unit-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.price-original-box .price-type {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.price-value-strike {
+  font-size: 16px;
+  color: #94a3b8;
+  text-decoration: line-through;
+  font-weight: 600;
+}
+
+.fine-notice-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+}
+
+/* Nút hành động */
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-borrow-main {
+  flex: 1 1 260px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  transition: all 0.22s ease;
+}
+
+.btn-borrow-main:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
+}
+
+.btn-borrow-main:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-back-catalog {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 20px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-back-catalog:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+/* Ghi chú chính sách */
+.quick-policy-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.policy-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ---------------------------------------------------------
+   4. CÁC TAB CHI TIẾT (TABS SECTION)
+   --------------------------------------------------------- */
+.detail-tabs-section {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.tabs-nav-bar {
+  display: flex;
+  border-bottom: 1.5px solid #e2e8f0;
+  background: #fafafa;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: #2563eb;
+}
+
+.tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: #ffffff;
+}
+
+.tab-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid #bfdbfe;
+}
+
+.tab-btn.active .tab-badge {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.tab-panel {
+  padding: 32px;
+}
+
+.panel-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+}
+
+.panel-subheading {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 24px;
+}
+
+/* Tab 1: Description */
+.book-description-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #334155;
+  white-space: pre-line;
+}
+
+.empty-desc-text {
+  font-size: 14px;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Tab 2: Tồn kho chi nhánh */
+.branch-inventories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.branch-inventory-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.22s ease;
+}
+
+.branch-inventory-card.has-stock:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.12);
+  transform: translateY(-3px);
+  background: #ffffff;
+}
+
+.branch-inventory-card.no-stock {
+  opacity: 0.75;
+  background: #fafafa;
+}
+
+.branch-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.branch-main-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.branch-icon {
+  font-size: 20px;
+}
+
+.branch-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.branch-stock-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.branch-stock-badge.badge-in {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.branch-stock-badge.badge-out {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.branch-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shelf-row strong {
+  color: #2563eb;
+}
+
+.btn-choose-branch {
+  width: 100%;
+  padding: 10px;
+  background: #ffffff;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-choose-branch:hover:not(:disabled) {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.btn-choose-branch:disabled {
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.empty-inventory-box {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.empty-inv-icon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Tab 3: Specs Table */
+.specs-table-wrapper {
+  max-width: 640px;
+}
+
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.specs-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.specs-table .spec-label {
+  width: 200px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.specs-table .spec-value {
+  color: #0f172a;
+}
+
+.text-primary {
+  color: #2563eb !important;
+}
+
+/* ---------------------------------------------------------
+   5. RESPONSIVE DESIGN
+   --------------------------------------------------------- */
+@media (max-width: 900px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .detail-cover-wrapper {
+    height: 340px;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .book-overview-card {
+    padding: 24px;
+  }
+
+  .detail-book-title {
+    font-size: 22px;
+  }
+
+  .tab-panel {
+    padding: 20px;
+  }
+}

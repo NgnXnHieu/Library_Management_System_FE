@@ -16,6 +16,20 @@
     </div>
   </div>
 
+  <!-- THÔNG BÁO LỖI HỆ THỐNG TRÊN MÀN HÌNH CHÍNH -->
+  @if (pageErrorMessage) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-text-wrapper">
+          <strong class="alert-title">Thông báo lỗi:</strong>
+          <span class="alert-message">{{ pageErrorMessage }}</span>
+        </div>
+      </div>
+      <button type="button" class="alert-close-btn" (click)="pageErrorMessage = ''" title="Đóng thông báo">&times;</button>
+    </div>
+  }
+
   <!-- 2. KHUNG BỘ LỌC TÌM KIẾM ĐA TIÊU CHÍ -->
   <div class="card filter-card">
     <div class="filter-header">
@@ -289,13 +303,25 @@
             <th 
               class="sortable text-end" 
               (click)="onSort('rentalPrice')" 
-              style="width: 120px;"
+              style="width: 110px;"
               [class.sort-active]="filterParams.sortBy === 'rentalPrice'"
               title="Nhấn để sắp xếp theo Giá thuê"
             >
               <div class="th-content justify-content-end">
                 <span>Giá Thuê</span>
                 <span class="sort-icon">{{ getSortIcon('rentalPrice') }}</span>
+              </div>
+            </th>
+            <th 
+              class="sortable text-end" 
+              (click)="onSort('fineAmount')" 
+              style="width: 120px;"
+              [class.sort-active]="filterParams.sortBy === 'fineAmount'"
+              title="Nhấn để sắp xếp theo Tiền phạt quá hạn"
+            >
+              <div class="th-content justify-content-end">
+                <span>Tiền Phạt/Ngày</span>
+                <span class="sort-icon">{{ getSortIcon('fineAmount') }}</span>
               </div>
             </th>
             <th class="text-center" style="width: 120px;">Trạng Thái</th>
@@ -318,7 +344,7 @@
           <!-- Hiệu ứng Đang Tải -->
           @if (isLoading) {
             <tr>
-              <td colspan="12" class="text-center py-5">
+              <td colspan="13" class="text-center py-5">
                 <div class="loading-spinner"></div>
                 <div class="loading-text">Đang tải danh sách đầu sách...</div>
               </td>
@@ -326,7 +352,7 @@
           } @else if (books.length === 0) {
             <!-- Trạng thái trống (Không tìm thấy kết quả) -->
             <tr>
-              <td colspan="12" class="text-center py-5 empty-row">
+              <td colspan="13" class="text-center py-5 empty-row">
                 <div class="empty-icon">📭</div>
                 <div class="empty-title">Không tìm thấy đầu sách nào phù hợp</div>
                 <p class="empty-subtitle">Vui lòng thử lại với các tiêu chí tìm kiếm khác hoặc bấm "Làm mới".</p>
@@ -379,6 +405,9 @@
                 </td>
                 <td class="text-end">
                   <span class="rental-price-text">{{ book.rentalPrice != null ? (book.rentalPrice | number:'1.0-0') + ' đ' : '—' }}</span>
+                </td>
+                <td class="text-end">
+                  <span class="fine-price-text">{{ book.fineAmount != null ? (book.fineAmount | number:'1.0-0') + ' đ' : '0 đ' }}</span>
                 </td>
                 <td class="text-center">
                   <span 
@@ -461,6 +490,20 @@
 
       <form [formGroup]="bookForm" (ngSubmit)="onSaveBook()">
         <div class="modal-body">
+          <!-- THÔNG BÁO LỖI BÊN TRONG MODAL -->
+          @if (modalErrorMessage) {
+            <div class="alert-banner alert-danger modal-alert">
+              <div class="alert-content">
+                <span class="alert-icon">⚠️</span>
+                <div class="alert-text-wrapper">
+                  <strong class="alert-title">Lỗi xử lý:</strong>
+                  <span class="alert-message">{{ modalErrorMessage }}</span>
+                </div>
+              </div>
+              <button type="button" class="alert-close-btn" (click)="modalErrorMessage = ''" title="Đóng thông báo">&times;</button>
+            </div>
+          }
+
           <!-- Hàng upload ảnh bìa sách -->
           <div class="form-group image-upload-group">
             <label class="form-label">
@@ -654,6 +697,28 @@
               />
             </div>
 
+            <!-- Tiền Phạt Quá Hạn -->
+            <div class="form-group col-span-2">
+              <label for="modalFineAmount" class="form-label">
+                Tiền phạt quá hạn / ngày (VNĐ) <span class="text-danger">*</span>:
+              </label>
+              <input 
+                id="modalFineAmount" 
+                type="number" 
+                min="0"
+                step="1000"
+                class="form-control" 
+                formControlName="fineAmount"
+                placeholder="Ví dụ: 5000"
+                [class.is-invalid]="f['fineAmount'].touched && f['fineAmount'].invalid"
+              />
+              @if (f['fineAmount'].touched && f['fineAmount'].invalid) {
+                <div class="invalid-feedback">
+                  <span>Tiền phạt quá hạn là bắt buộc và không được âm (&ge; 0)!</span>
+                </div>
+              }
+            </div>
+
             <!-- Mô Tả / Giới Thiệu -->
             <div class="form-group col-span-2">
               <label for="modalDescription" class="form-label">Mô tả tóm tắt nội dung:</label>
@@ -701,6 +766,16 @@
           <strong>{{ bookToDelete.title }}</strong>
           <span class="text-muted d-block">ISBN: {{ bookToDelete.isbn }}</span>
         </div>
+        @if (deleteErrorMessage) {
+          <div class="alert-banner alert-danger mt-3">
+            <div class="alert-content">
+              <span class="alert-icon">⚠️</span>
+              <div class="alert-text-wrapper">
+                <span class="alert-message">{{ deleteErrorMessage }}</span>
+              </div>
+            </div>
+          </div>
+        }
         <p class="text-warning text-sm mt-3">
           * Lưu ý: Nếu sách đã phát sinh giao dịch mượn, hệ thống sẽ từ chối xóa để đảm bảo toàn vẹn dữ liệu.
         </p>

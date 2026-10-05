@@ -1,6 +1,7 @@
 /* ==========================================================================
    CUSTOMER HOME PAGE STYLES
    Thiết kế giao diện hiện đại, tươi sáng, giàu tính tương tác cho độc giả
+   Tích hợp danh mục thể loại động & Danh sách sách thực tế từ API
    ========================================================================== */
 
 .customer-home-page {
@@ -66,6 +67,7 @@
   display: flex;
   gap: 16px;
   margin-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .btn-lg {
@@ -80,6 +82,7 @@
   gap: 24px;
   padding-top: 24px;
   border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
 }
 
 .stat-item {
@@ -176,9 +179,11 @@
   font-size: 12px;
 }
 
-/* 2. CATEGORIES SECTION */
+/* 2. CATEGORIES SECTION (DANH MỤC THỂ LOẠI THỰC TẾ) */
 .categories-section {
   padding: 60px 0;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .section-header {
@@ -186,6 +191,8 @@
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .section-title {
@@ -193,12 +200,13 @@
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.5px;
+  margin: 0;
 }
 
 .section-subtitle {
   font-size: 14px;
   color: #64748b;
-  margin-top: 4px;
+  margin: 6px 0 0;
 }
 
 .btn-more {
@@ -206,147 +214,522 @@
   font-weight: 600;
   text-decoration: none;
   font-size: 14px;
+  transition: color 0.2s;
 }
 
 .btn-more:hover {
   text-decoration: underline;
+  color: #1d4ed8;
 }
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
 }
 
-.category-card {
-  padding: 24px 18px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.loading-cats-text {
+  grid-column: 1 / -1;
   text-align: center;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  cursor: pointer;
+  padding: 30px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.category-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  transition: all 0.22s ease;
 }
 
 .category-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border-color: #bfdbfe;
+  box-shadow: 0 10px 20px -4px rgba(37, 99, 235, 0.1);
+}
+
+.cat-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.category-card:hover .cat-icon-box {
+  transform: scale(1.1);
 }
 
 .cat-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
+  font-size: 22px;
+}
+
+.cat-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .cat-name {
   font-size: 14px;
   font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-link-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* 3. HOME BOOKS SECTION (DANH SÁCH SÁCH MỚI NHẤT & TAB LỌC) */
+.home-books-section {
+  padding: 60px 0 70px;
+  background-color: #f8fafc;
+}
+
+.book-section-header {
+  margin-bottom: 24px;
+}
+
+.sub-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
 
-.cat-count {
-  font-size: 12px;
+.btn-more-books {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-more-books:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.btn-more-books .arrow {
+  transition: transform 0.2s;
+}
+
+.btn-more-books:hover .arrow {
+  transform: translateX(3px);
+}
+
+/* Tab Lọc Nhanh Theo Thể Loại Ngay Tại Trang Chủ */
+.home-category-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 28px;
+  scrollbar-width: thin;
+}
+
+.home-cat-tab {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.home-cat-tab:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.home-cat-tab.active {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+/* Loading & Empty States */
+.books-loading-box {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.home-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.books-loading-box p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.books-empty-box {
+  text-align: center;
+  padding: 50px 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1.5px dashed #cbd5e1;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.books-empty-box .empty-icon {
+  font-size: 44px;
+  margin-bottom: 12px;
+}
+
+.books-empty-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.books-empty-box p {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+/* Lưới Thẻ Sách */
+.home-books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 36px;
+}
+
+.home-book-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+}
+
+.home-book-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 28px -6px rgba(15, 23, 42, 0.12);
+  border-color: #93c5fd;
+}
+
+/* Khung Bìa Sách */
+.book-cover-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.cover-click-area {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.book-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.home-book-card:hover .book-img {
+  transform: scale(1.06);
+}
+
+.cover-mockup {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.mockup-emoji {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.mockup-name {
+  font-size: 13px;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #f1f5f9;
+}
+
+.category-badge-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.3px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Nội dung sách */
+.book-card-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.book-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 8px;
+  height: 42px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-title-link {
+  color: #0f172a;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.book-title-link:hover {
+  color: #2563eb;
+}
+
+.book-author-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.author-text {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 14px;
+}
+
+.meta-tag {
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 4px;
   color: #64748b;
 }
 
-/* 3. POPULAR BOOKS SECTION */
-.popular-books-section {
-  padding: 40px 0 60px;
-}
-
-.books-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
-}
-
-.book-card {
-  background-color: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: all 0.25s ease;
+/* Khối giá */
+.book-price-block {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
-.book-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08);
-}
-
-.book-cover {
-  height: 180px;
-  padding: 20px;
-  color: #ffffff;
+.price-rental-row {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   justify-content: space-between;
-  position: relative;
 }
 
-.cover-rating {
-  align-self: flex-end;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  padding: 4px 8px;
-  border-radius: 9999px;
+.price-rental-row .price-lbl {
   font-size: 12px;
   font-weight: 600;
+  color: #0f172a;
 }
 
-.cover-category {
+.price-amt {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.price-amt small {
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.85;
+  font-weight: 500;
+  color: #64748b;
 }
 
-.cover-title {
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.3;
-  margin-top: 4px;
-}
-
-.book-info {
-  padding: 18px;
-  flex: 1;
+.price-cover-row {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
 }
 
-.book-author {
-  font-size: 13px;
-  color: #475569;
-}
-
-.book-status-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.book-cat-tag {
+.price-cover-row .price-lbl {
   font-size: 11px;
   color: #94a3b8;
 }
 
-.btn-block {
+.price-old {
+  font-size: 12px;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+/* Nút hành động */
+.btn-card-action {
   width: 100%;
+  padding: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.22s ease;
+}
+
+.btn-card-action:hover {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  gap: 10px;
+}
+
+.arrow-right {
+  transition: transform 0.2s ease;
+}
+
+.btn-card-action:hover .arrow-right {
+  transform: translateX(3px);
+}
+
+/* Banner Xem Thêm ở cuối */
+.home-browse-more-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 18px;
+  padding: 28px 32px;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+}
+
+.banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.banner-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #ffffff;
+}
+
+.banner-text p {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.btn-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* 4. GUIDE SECTION */
 .guide-section {
-  padding: 60px 0 20px;
+  padding: 70px 0 30px;
   background-color: #ffffff;
   border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
 }
 
 .text-center {
@@ -363,15 +746,20 @@
 
 .step-card {
   text-align: center;
-  padding: 28px 20px;
-  border-radius: 12px;
+  padding: 32px 24px;
+  border-radius: 14px;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
+  transition: transform 0.2s ease;
+}
+
+.step-card:hover {
+  transform: translateY(-4px);
 }
 
 .step-number {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   margin: 0 auto 16px;
   background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #ffffff;
@@ -381,6 +769,7 @@
   justify-content: center;
   font-size: 18px;
   font-weight: 800;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
 .step-card h3 {
@@ -393,5 +782,36 @@
 .step-card p {
   font-size: 14px;
   color: #64748b;
-  line-height: 1.5;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .hero-main-title {
+    font-size: 32px;
+  }
+
+  .banner-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-books-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .book-cover-wrap {
+    height: 190px;
+  }
+
+  .book-title {
+    font-size: 13px;
+    height: 36px;
+  }
+
+  .price-amt {
+    font-size: 14px;
+  }
 }

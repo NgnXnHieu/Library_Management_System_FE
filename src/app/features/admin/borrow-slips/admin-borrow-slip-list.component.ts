@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AdminBorrowSlipService } from './services/admin-borrow-slip.service';
 import { BranchService } from '../branches/services/branch.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -10,7 +11,11 @@ import {
   BorrowSlipFilterParams, 
   BorrowSlipResponseDto, 
   BorrowStatus, 
-  PaymentStatus 
+  PaymentStatus,
+  isBorrowSlipOverdue,
+  getBorrowSlipOverdueDays,
+  getBorrowSlipStatusLabel,
+  getBorrowSlipStatusBadgeClass
 } from '../../../shared/models/borrow-slip.model';
 import { BranchResponseDto } from '../../../shared/models/branch.model';
 
@@ -32,6 +37,7 @@ import { BranchResponseDto } from '../../../shared/models/branch.model';
 })
 export class AdminBorrowSlipListComponent implements OnInit {
 
+  private route = inject(ActivatedRoute);
   private borrowSlipService = inject(AdminBorrowSlipService);
   private branchService = inject(BranchService);
   private toastService = inject(ToastService);
@@ -82,8 +88,14 @@ export class AdminBorrowSlipListComponent implements OnInit {
     // Bước 1: Nạp danh sách chi nhánh đổ vào dropdown
     this.loadBranches();
 
-    // Bước 2: Nạp dữ liệu danh sách phiếu mượn
-    this.loadBorrowSlips();
+    // Bước 2: Đọc queryParams nếu được điều hướng từ Quản lý khách hàng
+    this.route.queryParams.subscribe((params) => {
+      if (params['customerSearch']) {
+        this.filterParams.customerSearch = params['customerSearch'];
+      }
+      // Bước 3: Nạp dữ liệu danh sách phiếu mượn
+      this.loadBorrowSlips();
+    });
   }
 
   /**
@@ -272,8 +284,19 @@ export class AdminBorrowSlipListComponent implements OnInit {
   // CÁC HÀM TIỆN ÍCH HIỂN THỊ BADGE VÀ NHÃN (LABELS)
   // =========================================================================
 
-  getStatusBadgeClass(status: BorrowStatus): string {
-    switch (status) {
+  isOverdue(slip: BorrowSlipResponseDto | null | undefined): boolean {
+    return isBorrowSlipOverdue(slip);
+  }
+
+  getOverdueDays(slip: BorrowSlipResponseDto | null | undefined): number {
+    return getBorrowSlipOverdueDays(slip);
+  }
+
+  getStatusBadgeClass(slipOrStatus: BorrowSlipResponseDto | BorrowStatus): string {
+    if (typeof slipOrStatus === 'object' && slipOrStatus !== null) {
+      return getBorrowSlipStatusBadgeClass(slipOrStatus);
+    }
+    switch (slipOrStatus) {
       case 'BORROWED': return 'badge-borrowed';
       case 'RETURNED': return 'badge-returned';
       case 'OVERDUE': return 'badge-overdue';
@@ -282,13 +305,16 @@ export class AdminBorrowSlipListComponent implements OnInit {
     }
   }
 
-  getStatusLabel(status: BorrowStatus): string {
-    switch (status) {
+  getStatusLabel(slipOrStatus: BorrowSlipResponseDto | BorrowStatus): string {
+    if (typeof slipOrStatus === 'object' && slipOrStatus !== null) {
+      return getBorrowSlipStatusLabel(slipOrStatus);
+    }
+    switch (slipOrStatus) {
       case 'BORROWED': return 'Đang mượn';
       case 'RETURNED': return 'Đã trả';
       case 'OVERDUE': return 'Quá hạn';
       case 'CANCELLED': return 'Đã hủy';
-      default: return status;
+      default: return slipOrStatus;
     }
   }
 

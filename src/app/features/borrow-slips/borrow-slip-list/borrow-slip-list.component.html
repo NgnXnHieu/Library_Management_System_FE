@@ -75,13 +75,21 @@
                 <td>{{ slip.customerName }}</td>
                 <td>{{ slip.branchName }}</td>
                 <td>{{ slip.borrowedAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ slip.dueAt | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <div>{{ slip.dueAt | date:'dd/MM/yyyy' }}</div>
+                  <small [ngClass]="isOverdue(slip) ? 'text-danger font-weight-bold' : 'text-muted'">{{ slip.dueAt | date:'HH:mm' }}</small>
+                </td>
                 <td>{{ slip.totalQuantity }} cuốn</td>
                 <td>{{ slip.totalAmount | number:'1.0-0' }} đ</td>
                 <td>
-                  <span class="badge" [ngClass]="getStatusBadgeClass(slip.status)">
-                    {{ getStatusLabel(slip.status) }}
+                  <span class="badge" [ngClass]="getStatusBadgeClass(slip)">
+                    {{ getStatusLabel(slip) }}
                   </span>
+                  @if (isOverdue(slip)) {
+                    <div style="font-size: 11px; font-weight: 700; color: #dc2626; margin-top: 2px;">
+                      Quá {{ getOverdueDays(slip) }} ngày
+                    </div>
+                  }
                 </td>
               </tr>
             }

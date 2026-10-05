@@ -12,6 +12,9 @@ export interface InventoryResponseDto {
   bookId: number;
   bookTitle: string;
   isbn: string;
+  author?: string;
+  publisher?: string;
+  publicationYear?: number;
   coverImageUrl?: string;
   price?: number;
   rentalPrice?: number;

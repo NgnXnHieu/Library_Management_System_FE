@@ -6,6 +6,7 @@ import { ApiResponse, PageResponse } from '../../../../shared/models/api-respons
 import {
   AccountCreateRequest,
   AccountStatus,
+  CustomerFilterRequest,
   UserAdminFilterRequest,
   UserResponseDto,
   UserUpdateRequest
@@ -110,6 +111,42 @@ export class UserService {
     }
     return this.http.get<ApiResponse<UserResponseDto[]>>(
       `${this.baseUrl}/users/customer`,
+      { params }
+    );
+  }
+
+  /**
+   * Gọi API lấy danh sách phân trang người dùng có vai trò là khách hàng (CUSTOMER) kèm bộ lọc
+   * Tương ứng với backend: @GetMapping("/users/customers")
+   *
+   * @param filter Bộ lọc gồm username, fullName, phone, email, status, page, size, sortBy, sortDir
+   */
+  getCustomersPage(filter: CustomerFilterRequest): Observable<ApiResponse<PageResponse<UserResponseDto>>> {
+    let params = new HttpParams();
+
+    if (filter.username && filter.username.trim()) {
+      params = params.set('username', filter.username.trim());
+    }
+    if (filter.fullName && filter.fullName.trim()) {
+      params = params.set('fullName', filter.fullName.trim());
+    }
+    if (filter.phone && filter.phone.trim()) {
+      params = params.set('phone', filter.phone.trim());
+    }
+    if (filter.email && filter.email.trim()) {
+      params = params.set('email', filter.email.trim());
+    }
+    if (filter.status) {
+      params = params.set('status', filter.status);
+    }
+
+    params = params.set('page', (filter.page ?? 0).toString());
+    params = params.set('size', (filter.size ?? 10).toString());
+    params = params.set('sortBy', filter.sortBy ?? 'createdAt');
+    params = params.set('sortDir', filter.sortDir ?? 'desc');
+
+    return this.http.get<ApiResponse<PageResponse<UserResponseDto>>>(
+      `${this.baseUrl}/users/customers`,
       { params }
     );
   }

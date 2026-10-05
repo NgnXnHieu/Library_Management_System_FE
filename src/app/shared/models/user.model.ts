@@ -97,3 +97,30 @@ export interface UserUpdateRequest {
   role?: string;
   branchId?: number;
 }
+
+/**
+ * Interface dữ liệu đăng ký tài khoản mới (Khách hàng)
+ */
+export interface RegisterRequestData {
+  username: string;
+  password: string;
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
+/**
+ * Interface tham số lọc danh sách khách hàng (Customer)
+ */
+export interface CustomerFilterRequest {
+  username?: string;
+  fullName?: string;
+  phone?: string;
+  email?: string;
+  status?: AccountStatus;
+  sortBy?: string;
+  sortDir?: string;
+  page?: number;
+  size?: number;
+}
+

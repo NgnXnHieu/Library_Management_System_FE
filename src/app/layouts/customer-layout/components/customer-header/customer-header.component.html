@@ -28,9 +28,40 @@
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
         <span class="nav-icon">🏠</span> Trang Chủ
       </a>
-      <a routerLink="/categories" routerLinkActive="active" class="nav-link">
-        <span class="nav-icon">📖</span> Thể Loại
-      </a>
+      <!-- Menu Item Thể Loại với Mega Dropdown ngang khi hover -->
+      <div class="nav-item-dropdown">
+        <a routerLink="/books" routerLinkActive="active" class="nav-link dropdown-toggle">
+          <span class="nav-icon">📖</span> Thể Loại <span class="arrow-indicator">▾</span>
+        </a>
+
+        <!-- Mega menu dạng lưới ngang (Horizontal Grid) -->
+        <div class="category-mega-dropdown">
+          <div class="dropdown-header">
+            <span class="dropdown-header-title">✨ DANH MỤC THỂ LOẠI SÁCH</span>
+            <span class="dropdown-badge">{{ categories.length }} thể loại</span>
+          </div>
+          <div class="category-grid">
+            @for (cat of categories; track cat.id) {
+              <a 
+                class="category-grid-item" 
+                [routerLink]="['/books']" 
+                [queryParams]="{ categoryId: cat.id, categoryName: cat.name }"
+              >
+                <span class="category-icon">📚</span>
+                <span class="category-name">{{ cat.name }}</span>
+              </a>
+            } @empty {
+              <div class="empty-categories">Đang tải danh mục thể loại...</div>
+            }
+          </div>
+          <div class="dropdown-footer">
+            <a [routerLink]="['/books']" class="view-all-link">
+              <span>Xem tất cả sách trong thư viện</span>
+              <span class="arrow-right">➔</span>
+            </a>
+          </div>
+        </div>
+      </div>
       <a routerLink="/borrow-slips" routerLinkActive="active" class="nav-link">
         <span class="nav-icon">📋</span> Phiếu Mượn
       </a>

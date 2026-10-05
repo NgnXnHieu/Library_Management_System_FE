@@ -1,0 +1,383 @@
+<!-- ==========================================================================
+     MÀN HÌNH CHI TIẾT SÁCH DÀNH CHO KHÁCH HÀNG (CUSTOMER BOOK DETAIL)
+     - Gọi và hiển thị dữ liệu từ GET /public/books/{bookId}
+     - Tổng quan sách: Bìa sách, Tiêu đề, Tác giả, Giá mượn/ngày, Giá bìa, NXB
+     - Bảng tình trạng tồn kho theo từng chi nhánh thư viện (Branch Inventories)
+     - Thiết kế chuẩn thẩm mỹ cao, responsive trên mọi thiết bị
+     ========================================================================== -->
+
+<div class="book-detail-page">
+  
+  <div class="container">
+    
+    <!-- 1. BREADCRUMB ĐIỀU HƯỚNG -->
+    <nav class="detail-breadcrumb" aria-label="Breadcrumb">
+      <a routerLink="/" class="crumb-link">🏠 Trang chủ</a>
+      <span class="crumb-sep">/</span>
+      <a routerLink="/books" class="crumb-link">Kho sách</a>
+      @if (book?.categoryName) {
+        <span class="crumb-sep">/</span>
+        <a 
+          [routerLink]="['/books']" 
+          [queryParams]="{ categoryId: book?.categoryId, categoryName: book?.categoryName }" 
+          class="crumb-link"
+        >
+          {{ book?.categoryName }}
+        </a>
+      }
+      <span class="crumb-sep">/</span>
+      <span class="crumb-current">{{ book?.title || 'Chi tiết sách' }}</span>
+    </nav>
+
+    <!-- 2. TRẠNG THÁI LOADING -->
+    @if (isLoading) {
+      <div class="detail-loading-box">
+        <div class="spinner-detail"></div>
+        <p class="loading-msg">Đang tải thông tin chi tiết đầu sách...</p>
+      </div>
+    }
+
+    <!-- 3. TRẠNG THÁI BÁO LỖI HOẶC KHÔNG TÌM THẤY SÁCH -->
+    @else if (errorMessage || !book) {
+      <div class="detail-error-card">
+        <div class="error-icon">📭</div>
+        <h2 class="error-title">Không Tìm Thấy Thông Tin Sách</h2>
+        <p class="error-desc">{{ errorMessage || 'Đầu sách bạn đang tìm không tồn tại hoặc đã ngừng phục vụ.' }}</p>
+        <div class="error-actions">
+          <a routerLink="/books" class="btn btn-primary">
+            <span>← Quay lại Kho Sách</span>
+          </a>
+        </div>
+      </div>
+    }
+
+    <!-- 4. NỘI DUNG CHI TIẾT SÁCH (KHI TẢI THÀNH CÔNG) -->
+    @else {
+      <div class="book-overview-card">
+        <div class="overview-grid">
+          
+          <!-- CỘT TRÁI: BÌA SÁCH & HUY HIỆU -->
+          <div class="cover-column">
+            <div class="detail-cover-wrapper">
+              @if (book.coverImageUrl) {
+                <img 
+                  [src]="book.coverImageUrl" 
+                  [alt]="book.title" 
+                  class="detail-cover-img" 
+                />
+              } @else {
+                <div class="detail-cover-mockup">
+                  <span class="mockup-icon">📖</span>
+                  <span class="mockup-title">{{ book.title }}</span>
+                </div>
+              }
+
+              <!-- Huy hiệu thể loại nổi -->
+              @if (book.categoryName) {
+                <span class="badge-category-float">{{ book.categoryName }}</span>
+              }
+            </div>
+
+            <!-- Huy hiệu trạng thái khả dụng của sách -->
+            <div class="availability-status-box" [class.in-stock]="hasAvailableCopies" [class.out-of-stock]="!hasAvailableCopies">
+              @if (hasAvailableCopies) {
+                <span class="status-dot green"></span>
+                <span class="status-text">Còn <strong>{{ totalAvailableCopies }}</strong> cuốn sẵn sàng cho mượn</span>
+              } @else {
+                <span class="status-dot gray"></span>
+                <span class="status-text">Tất cả chi nhánh hiện đang hết sách</span>
+              }
+            </div>
+          </div>
+
+          <!-- CỘT PHẢI: THÔNG TIN CHI TIẾT & BẢNG GIÁ & HÀNH ĐỘNG -->
+          <div class="info-column">
+            
+            <!-- Danh mục thể loại -->
+            <div class="category-meta-tag">
+              <a 
+                [routerLink]="['/books']" 
+                [queryParams]="{ categoryId: book.categoryId, categoryName: book.categoryName }"
+                class="category-pill-link"
+              >
+                📚 {{ book.categoryName }}
+              </a>
+            </div>
+
+            <!-- Tên sách -->
+            <h1 class="detail-book-title">{{ book.title }}</h1>
+
+            <!-- Hàng tác giả & NXB -->
+            <div class="author-publisher-bar">
+              <div class="meta-inline-item">
+                <span class="meta-icon">✍️</span>
+                <span class="meta-label">Tác giả:</span>
+                <strong class="meta-val">{{ book.author || 'Đang cập nhật' }}</strong>
+              </div>
+
+              <div class="meta-inline-item">
+                <span class="meta-icon">🏢</span>
+                <span class="meta-label">Nhà xuất bản:</span>
+                <span class="meta-val">{{ book.publisher || 'N/A' }}</span>
+              </div>
+
+              <div class="meta-inline-item">
+                <span class="meta-icon">📅</span>
+                <span class="meta-label">Năm XB:</span>
+                <span class="meta-val">{{ book.publicationYear || 'N/A' }}</span>
+              </div>
+            </div>
+
+            <!-- Mã định danh ISBN -->
+            <div class="isbn-badge-row">
+              <span class="isbn-label">MÃ ISBN:</span>
+              <code class="isbn-code">{{ book.isbn }}</code>
+            </div>
+
+            <!-- BẢNG GIÁ MƯỢN & GIÁ BÌA SÁCH -->
+            <div class="pricing-card">
+              <div class="pricing-header">
+                <span class="pricing-title">Chi Phí Mượn Đọc Thư Viện</span>
+              </div>
+              <div class="pricing-body">
+                <div class="price-highlight-row">
+                  <div class="price-main-box">
+                    <span class="price-type">Phí mượn theo ngày:</span>
+                    <span class="price-value-big">
+                      {{ (book.rentalPrice || 0) | number:'1.0-0' }} <span class="unit-text">đ/ngày</span>
+                    </span>
+                  </div>
+
+                  @if (book.price) {
+                    <div class="price-original-box">
+                      <span class="price-type">Giá bìa sách:</span>
+                      <span class="price-value-strike">
+                        {{ book.price | number:'1.0-0' }} đ
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                @if (book.fineAmount) {
+                  <div class="fine-notice-line">
+                    <span class="notice-icon">⚠️</span>
+                    <span>Phí phạt trả quá hạn theo quy định: <strong>{{ book.fineAmount | number:'1.0-0' }} đ/ngày</strong></span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- NÚT HÀNH ĐỘNG MƯỢN SÁCH & ĐIỀU HƯỚNG -->
+            <div class="action-buttons-group">
+              <button 
+                type="button" 
+                class="btn-borrow-main" 
+                [disabled]="!hasAvailableCopies"
+                (click)="handleBorrow()"
+              >
+                <span class="btn-icon">📥</span>
+                <span>{{ hasAvailableCopies ? 'Đăng Ký Mượn Sách Này' : 'Hiện Đang Hết Sách' }}</span>
+              </button>
+
+              <a routerLink="/books" class="btn-back-catalog">
+                <span>← Tiếp Tục Tìm Sách</span>
+              </a>
+            </div>
+
+            <!-- Ghi chú nhanh cho độc giả -->
+            <div class="quick-policy-note">
+              <div class="policy-item">
+                <span class="policy-icon">⚡</span>
+                <span>Giữ sách trực tuyến trong 24 giờ sau khi gửi yêu cầu</span>
+              </div>
+              <div class="policy-item">
+                <span class="policy-icon">🛡️</span>
+                <span>Nhận sách và kiểm tra tại quầy chi nhánh gần bạn nhất</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 5. CÁC TAB CHI TIẾT: GIỚI THIỆU | TỒN KHO CHI NHÁNH | THÔNG SỐ -->
+      <div class="detail-tabs-section">
+        
+        <!-- Header chuyển đổi Tab -->
+        <div class="tabs-nav-bar">
+          <button 
+            type="button" 
+            class="tab-btn" 
+            [class.active]="activeTab === 'desc'"
+            (click)="setActiveTab('desc')"
+          >
+            <span>📝 Giới Thiệu Nội Dung</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="tab-btn" 
+            [class.active]="activeTab === 'inventories'"
+            (click)="setActiveTab('inventories')"
+          >
+            <span>🏢 Tra Cứu Tồn Kho Chi Nhánh</span>
+            <span class="tab-badge">{{ book.inventories ? book.inventories.length : 0 }}</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="tab-btn" 
+            [class.active]="activeTab === 'specs'"
+            (click)="setActiveTab('specs')"
+          >
+            <span>⚙️ Thông Số Kỹ Thuật</span>
+          </button>
+        </div>
+
+        <!-- NỘI DUNG TAB 1: GIỚI THIỆU SÁCH -->
+        @if (activeTab === 'desc') {
+          <div class="tab-panel desc-panel">
+            <h3 class="panel-heading">Tóm Tắt & Nội Dung Cuốn Sách</h3>
+            @if (book.description) {
+              <div class="book-description-text">
+                {{ book.description }}
+              </div>
+            } @else {
+              <p class="empty-desc-text">
+                Nội dung tóm tắt chi tiết của cuốn sách này đang được ban biên tập thư viện cập nhật.
+              </p>
+            }
+          </div>
+        }
+
+        <!-- NỘI DUNG TAB 2: TÌNH TRẠNG TỒN KHO THEO TỪNG CHI NHÁNH -->
+        @if (activeTab === 'inventories') {
+          <div class="tab-panel inventories-panel">
+            <div class="panel-header-row">
+              <div>
+                <h3 class="panel-heading">Danh Sách Chi Nhánh Đang Phục Vụ Cuốn Sách Này</h3>
+                <p class="panel-subheading">Tra cứu số lượng sách sẵn có và vị trí kệ sách để đến mượn đọc trực tiếp</p>
+              </div>
+            </div>
+
+            @if (!book.inventories || book.inventories.length === 0) {
+              <div class="empty-inventory-box">
+                <span class="empty-inv-icon">📦</span>
+                <p>Hiện chưa có chi nhánh nào phân bổ đầu sách này.</p>
+              </div>
+            } @else {
+              <div class="branch-inventories-grid">
+                @for (inv of book.inventories; track inv.inventoryId || inv.branchId) {
+                  <div class="branch-inventory-card" [class.has-stock]="inv.availableQuantity > 0" [class.no-stock]="inv.availableQuantity <= 0">
+                    
+                    <div class="branch-card-header">
+                      <div class="branch-main-info">
+                        <span class="branch-icon">🏢</span>
+                        <h4 class="branch-name">{{ inv.branchName }}</h4>
+                      </div>
+
+                      <div class="branch-stock-badge" [class.badge-in]="inv.availableQuantity > 0" [class.badge-out]="inv.availableQuantity <= 0">
+                        @if (inv.availableQuantity > 0) {
+                          <span>Còn {{ inv.availableQuantity }} / {{ inv.totalQuantity }} cuốn</span>
+                        } @else {
+                          <span>Tạm hết sách (0 / {{ inv.totalQuantity }})</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="branch-details-body">
+                      @if (inv.branchAddress) {
+                        <div class="detail-row">
+                          <span class="row-icon">📍</span>
+                          <span class="row-text">{{ inv.branchAddress }}</span>
+                        </div>
+                      }
+
+                      @if (inv.branchPhone) {
+                        <div class="detail-row">
+                          <span class="row-icon">📞</span>
+                          <span class="row-text">{{ inv.branchPhone }}</span>
+                        </div>
+                      }
+
+                      <div class="detail-row shelf-row">
+                        <span class="row-icon">🔖</span>
+                        <span class="row-text">Vị trí kệ: <strong>{{ inv.shelfLocation || 'Đang sắp xếp' }}</strong></span>
+                      </div>
+                    </div>
+
+                    <div class="branch-card-footer">
+                      <button 
+                        type="button" 
+                        class="btn-choose-branch" 
+                        [disabled]="inv.availableQuantity <= 0"
+                        (click)="handleBorrow(inv)"
+                      >
+                        {{ inv.availableQuantity > 0 ? 'Mượn Tại Chi Nhánh Này' : 'Hết Sách Tại Chi Nhánh' }}
+                      </button>
+                    </div>
+
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- NỘI DUNG TAB 3: THÔNG SỐ KỸ THUẬT -->
+        @if (activeTab === 'specs') {
+          <div class="tab-panel specs-panel">
+            <h3 class="panel-heading">Thông Số Xuất Bản & Định Danh</h3>
+            
+            <div class="specs-table-wrapper">
+              <table class="specs-table">
+                <tbody>
+                  <tr>
+                    <td class="spec-label">Mã ISBN</td>
+                    <td class="spec-value"><strong>{{ book.isbn }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Tác giả</td>
+                    <td class="spec-value">{{ book.author || 'Chưa cập nhật' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Thể loại sách</td>
+                    <td class="spec-value">{{ book.categoryName }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Nhà xuất bản</td>
+                    <td class="spec-value">{{ book.publisher || 'Chưa cập nhật' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Năm xuất bản</td>
+                    <td class="spec-value">{{ book.publicationYear || 'Chưa cập nhật' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Giá bìa sách</td>
+                    <td class="spec-value">{{ book.price ? (book.price | number:'1.0-0') + ' đ' : 'N/A' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Phí mượn theo ngày</td>
+                    <td class="spec-value text-primary"><strong>{{ book.rentalPrice ? (book.rentalPrice | number:'1.0-0') + ' đ/ngày' : 'Miễn phí' }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Phí phạt quá hạn</td>
+                    <td class="spec-value">{{ book.fineAmount ? (book.fineAmount | number:'1.0-0') + ' đ/ngày' : 'Theo quy định thư viện' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-label">Số chi nhánh có sách</td>
+                    <td class="spec-value">{{ book.inventories ? book.inventories.length : 0 }} chi nhánh</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
+  </div>
+
+</div>

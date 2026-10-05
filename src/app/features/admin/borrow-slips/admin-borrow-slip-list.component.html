@@ -221,11 +221,16 @@
                   </div>
                 </td>
 
-                <!-- Hạn trả -->
+                <!-- Hạn trả (kèm chi tiết giờ hẹn trả) -->
                 <td class="col-date">
-                  <span class="due-date" [class.due-warning]="slip.status === 'OVERDUE'">
-                    {{ slip.dueAt | date:'dd/MM/yyyy' }}
-                  </span>
+                  <div class="date-cell">
+                    <span class="due-date" [class.due-warning]="isOverdue(slip)">
+                      {{ slip.dueAt | date:'dd/MM/yyyy' }}
+                    </span>
+                    <small class="time-sub" [class.due-warning]="isOverdue(slip)">
+                      {{ slip.dueAt | date:'HH:mm' }}
+                    </small>
+                  </div>
                 </td>
 
                 <!-- Ngày trả -->
@@ -250,11 +255,16 @@
                   <span class="amount-text">{{ slip.totalAmount | number:'1.0-0' }} đ</span>
                 </td>
 
-                <!-- Trạng thái mượn -->
+                <!-- Trạng thái mượn (Tự động phát hiện quá hạn động & hiển thị số ngày quá hạn) -->
                 <td class="col-status text-center">
-                  <span class="badge" [ngClass]="getStatusBadgeClass(slip.status)">
-                    {{ getStatusLabel(slip.status) }}
-                  </span>
+                  <div class="status-cell">
+                    <span class="badge" [ngClass]="getStatusBadgeClass(slip)">
+                      {{ getStatusLabel(slip) }}
+                    </span>
+                    @if (isOverdue(slip)) {
+                      <small class="overdue-days-text">Quá {{ getOverdueDays(slip) }} ngày</small>
+                    }
+                  </div>
                 </td>
 
                 <!-- Trạng thái thanh toán -->
@@ -352,7 +362,12 @@
             </div>
             <div class="overview-item">
               <span class="overview-label">Hạn hẹn trả:</span>
-              <span class="overview-value font-bold text-danger">{{ selectedSlipForDetail.dueAt | date:'dd/MM/yyyy' }}</span>
+              <span class="overview-value font-bold" [class.text-danger]="isOverdue(selectedSlipForDetail)">
+                {{ selectedSlipForDetail.dueAt | date:'dd/MM/yyyy HH:mm:ss' }}
+                @if (isOverdue(selectedSlipForDetail)) {
+                  <span class="overdue-days-text">Quá {{ getOverdueDays(selectedSlipForDetail) }} ngày</span>
+                }
+              </span>
             </div>
             <div class="overview-item">
               <span class="overview-label">Ngày hoàn trả:</span>
@@ -367,8 +382,8 @@
             <div class="overview-item">
               <span class="overview-label">Trạng thái mượn:</span>
               <span class="overview-value">
-                <span class="badge" [ngClass]="getStatusBadgeClass(selectedSlipForDetail.status)">
-                  {{ getStatusLabel(selectedSlipForDetail.status) }}
+                <span class="badge" [ngClass]="getStatusBadgeClass(selectedSlipForDetail)">
+                  {{ getStatusLabel(selectedSlipForDetail) }}
                 </span>
               </span>
             </div>

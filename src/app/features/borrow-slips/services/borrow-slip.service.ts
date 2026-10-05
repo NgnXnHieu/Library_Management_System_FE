@@ -62,4 +62,28 @@ export class BorrowSlipService {
   createBorrowSlip(data: BorrowSlipCreateRequest): Observable<ApiResponse<BorrowSlipResponseDto>> {
     return this.http.post<ApiResponse<BorrowSlipResponseDto>>(`${environment.apiUrl}/borrow-slips`, data);
   }
+
+  /**
+   * Gọi API lấy danh sách phiếu mượn phân trang kèm chi tiết sách của người dùng hiện tại đang đăng nhập.
+   * Tương ứng với method BorrowSlipController: @GetMapping("/borrow-slips/my-slips")
+   *
+   * @param filter Bộ lọc trạng thái mượn, trạng thái thanh toán, sắp xếp ngày mượn/trả và phân trang
+   */
+  getMyBorrowSlips(filter: BorrowSlipFilterParams): Observable<ApiResponse<PageResponse<BorrowSlipResponseDto>>> {
+    let params = new HttpParams();
+
+    if (filter.page !== undefined) params = params.set('page', filter.page.toString());
+    if (filter.size !== undefined) params = params.set('size', filter.size.toString());
+    if (filter.borrowCode) params = params.set('borrowCode', filter.borrowCode.trim());
+    if (filter.status) params = params.set('status', filter.status);
+    if (filter.paymentStatus) params = params.set('paymentStatus', filter.paymentStatus);
+    if (filter.fromBorrowedAt) params = params.set('fromBorrowedAt', filter.fromBorrowedAt);
+    if (filter.toBorrowedAt) params = params.set('toBorrowedAt', filter.toBorrowedAt);
+    if (filter.fromReturnedAt) params = params.set('fromReturnedAt', filter.fromReturnedAt);
+    if (filter.toReturnedAt) params = params.set('toReturnedAt', filter.toReturnedAt);
+    if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+    if (filter.sortDir) params = params.set('sortDir', filter.sortDir);
+
+    return this.http.get<ApiResponse<PageResponse<BorrowSlipResponseDto>>>(`${environment.apiUrl}/borrow-slips/my-slips`, { params });
+  }
 }

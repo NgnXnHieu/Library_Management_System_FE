@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../../shared/models/api-response.model';
-import { LoginResponseData, RoleType, User } from '../../shared/models/user.model';
+import { LoginResponseData, RegisterRequestData, RoleType, User, UserResponseDto } from '../../shared/models/user.model';
 
 /**
  * SERVICE QUẢN LÝ XÁC THỰC VÀ PHÂN QUYỀN (AUTH SERVICE)
@@ -28,6 +28,18 @@ export class AuthService {
   ) {}
 
   /**
+   * Gọi API đăng ký tài khoản khách hàng mới vào hệ thống Spring Boot.
+   * Endpoint công khai: POST /public/auth/register
+   * Trả về thông tin User vừa tạo thành công.
+   */
+  register(data: RegisterRequestData): Observable<ApiResponse<UserResponseDto>> {
+    return this.http.post<ApiResponse<UserResponseDto>>(
+      `${environment.apiUrl}/public/auth/register`,
+      data
+    );
+  }
+
+  /**
    * Gọi API đăng nhập tài khoản vào hệ thống Spring Boot.
    * Gửi request kèm withCredentials: true để nhận Set-Cookie từ Backend.
    * JSON trả về chứa: role, username, fullName.
@@ -41,6 +53,32 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           // Lưu thông tin Role, Username, FullName từ JSON trả về
+          const user: User = {
+            username: response.data.username,
+            fullName: response.data.fullName,
+            roles: [response.data.role]
+          };
+          this.saveAuthData(user);
+        }
+      })
+    );
+  }
+
+  /**
+   * Gọi API làm mới token (Refresh Token) sang Backend Spring Boot.
+   * - Backend tự động nhận refreshToken từ HttpOnly Cookie.
+   * - Cấp cặp Cookie accessToken & refreshToken mới qua header Set-Cookie.
+   * - Trả về thông tin User mới trong body để cập nhật lại localStorage và Signal.
+   */
+  refreshToken(): Observable<ApiResponse<LoginResponseData>> {
+    return this.http.post<ApiResponse<LoginResponseData>>(
+      `${environment.apiUrl}/public/auth/refresh`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          // Cập nhật thông tin User mới nhận được vào localStorage và Signal
           const user: User = {
             username: response.data.username,
             fullName: response.data.fullName,

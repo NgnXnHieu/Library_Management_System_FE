@@ -18,6 +18,14 @@ export interface CategoryResponseDto {
 }
 
 /**
+ * Interface DTO rút gọn cho thể loại sách (phục vụ menu dropdown và bộ lọc)
+ */
+export interface CategorySimpleDto {
+  id: number;
+  name: string;
+}
+
+/**
  * Interface tham số lọc danh sách thể loại sách
  */
 export interface CategoryFilterRequest {
